@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import AuthModal from '@/components/auth/AuthModal';
 import JobDescriptionInput from '@/components/dashboard/JobDescriptionInput';
 import ResumeFolderInput from '@/components/dashboard/ResumeFolderInput';
-import { Brain, Users, Video, Mail, BarChart3 } from 'lucide-react';
+import { Users, Video, Mail } from 'lucide-react';
 
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -28,16 +28,6 @@ const Index = () => {
   };
 
   const features = [
-    {
-      icon: <Brain className="h-8 w-8 text-purple-600" />,
-      title: "AI Resume Parsing",
-      description: "Advanced LLM-powered resume analysis and data extraction"
-    },
-    {
-      icon: <BarChart3 className="h-8 w-8 text-blue-600" />,
-      title: "ATS Scoring",
-      description: "Intelligent candidate ranking with semantic matching"
-    },
     {
       icon: <Video className="h-8 w-8 text-green-600" />,
       title: "AI Video Interviews",
@@ -121,18 +111,22 @@ const Index = () => {
         )}
 
         {/* Hero Section */}
-        <div className="text-center mb-12">
-          <h2 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent">
-            AI-Powered Recruitment Intelligence
+        <div className="text-center mb-8">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            ai-powered recruitment intelligence
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-            Automate your entire hiring process with advanced AI agents for resume parsing, 
-            ATS scoring, video interviews, and candidate communication.
-          </p>
         </div>
 
-        {/* Features Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        {/* Main Dashboard - Job Description and Resume Inputs */}
+        {isAuthenticated && (
+          <div className="grid lg:grid-cols-2 gap-8 mb-12">
+            <JobDescriptionInput />
+            <ResumeFolderInput />
+          </div>
+        )}
+
+        {/* Features Grid - Only Video Interviews and Communication */}
+        <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
           {features.map((feature, index) => (
             <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-white/80 backdrop-blur-sm hover:scale-105">
               <CardContent className="p-6 text-center">
@@ -145,14 +139,6 @@ const Index = () => {
             </Card>
           ))}
         </div>
-
-        {/* Main Dashboard */}
-        {isAuthenticated && (
-          <div className="grid lg:grid-cols-2 gap-8">
-            <JobDescriptionInput />
-            <ResumeFolderInput />
-          </div>
-        )}
       </main>
 
       {/* Auth Modal */}
