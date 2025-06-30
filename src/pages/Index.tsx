@@ -1,26 +1,34 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
 import AuthModal from '@/components/auth/AuthModal';
 import JobDescriptionInput from '@/components/dashboard/JobDescriptionInput';
 import ResumeFolderInput from '@/components/dashboard/ResumeFolderInput';
-import { Users, Video, Mail, Download } from 'lucide-react';
+import { Users, Video, Mail, Download, CheckCircle, Clock, Send } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [showResults, setShowResults] = useState(false);
-  const [results] = useState([
+  const { toast } = useToast();
+  const [results, setResults] = useState([
     {
       id: 1,
       name: "John Smith",
       email: "john.smith@email.com",
       phone: "+1-555-0123",
       atsScore: 92,
-      status: "Qualified"
+      status: "Qualified",
+      videoInterviewStatus: "Completed",
+      videoAnalysis: "Confident, Clear Communication",
+      interviewEmailSent: true,
+      shortlisted: false,
+      staffName: "",
+      staffEmail: ""
     },
     {
       id: 2,
@@ -28,7 +36,13 @@ const Index = () => {
       email: "sarah.j@email.com",
       phone: "+1-555-0124",
       atsScore: 88,
-      status: "Qualified"
+      status: "Qualified",
+      videoInterviewStatus: "Pending",
+      videoAnalysis: "Awaiting Interview",
+      interviewEmailSent: true,
+      shortlisted: false,
+      staffName: "",
+      staffEmail: ""
     },
     {
       id: 3,
@@ -36,7 +50,27 @@ const Index = () => {
       email: "mike.davis@email.com", 
       phone: "+1-555-0125",
       atsScore: 65,
-      status: "Review"
+      status: "Review",
+      videoInterviewStatus: "Scheduled",
+      videoAnalysis: "Interview Scheduled",
+      interviewEmailSent: true,
+      shortlisted: false,
+      staffName: "",
+      staffEmail: ""
+    },
+    {
+      id: 4,
+      name: "Lisa Brown",
+      email: "lisa.brown@email.com",
+      phone: "+1-555-0126",
+      atsScore: 15,
+      status: "Not Qualified",
+      videoInterviewStatus: "Not Invited",
+      videoAnalysis: "Below Threshold",
+      interviewEmailSent: false,
+      shortlisted: false,
+      staffName: "",
+      staffEmail: ""
     }
   ]);
 
@@ -60,8 +94,8 @@ const Index = () => {
   const handleExcelDownload = () => {
     // Mock Excel download functionality
     const csvContent = "data:text/csv;charset=utf-8," 
-      + "Name,Email,Phone,ATS Score,Status\n"
-      + results.map(r => `${r.name},${r.email},${r.phone},${r.atsScore}%,${r.status}`).join("\n");
+      + "Name,Email,Phone,ATS Score,Status,Video Status,Analysis,Shortlisted\n"
+      + results.map(r => `${r.name},${r.email},${r.phone},${r.atsScore}%,${r.status},${r.videoInterviewStatus},${r.videoAnalysis},${r.shortlisted ? 'Yes' : 'No'}`).join("\n");
     
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -70,6 +104,43 @@ const Index = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleShortlist = (candidateId: number, checked: boolean) => {
+    setResults(prev => prev.map(candidate => {
+      if (candidate.id === candidateId) {
+        const updated = { ...candidate, shortlisted: checked };
+        
+        if (checked) {
+          // Show success message for shortlisting
+          toast({
+            title: "Candidate Shortlisted",
+            description: `${candidate.name} has been shortlisted. Staff will be notified to schedule next round.`,
+          });
+          
+          // Auto-generate email notification for staff
+          console.log(`Auto-generating email for staff about ${candidate.name}`);
+          console.log(`Email will be sent to staff for scheduling next round interview`);
+        }
+        
+        return updated;
+      }
+      return candidate;
+    }));
+  };
+
+  const sendInterviewEmail = (candidate: any) => {
+    if (candidate.atsScore >= 20) {
+      console.log(`Sending interview email to ${candidate.email}`);
+      console.log(`Subject: Video Interview Invitation - Senior Software Engineer`);
+      console.log(`Interview link: https://interview.joblens.ai/session/${candidate.id}`);
+      console.log(`Deadline: 48 hours from now`);
+      
+      toast({
+        title: "Interview Email Sent",
+        description: `Video interview invitation sent to ${candidate.name}`,
+      });
+    }
   };
 
   const features = [
@@ -95,10 +166,10 @@ const Index = () => {
               <Users className="h-6 w-6 text-white" />
             </div>
             <div className="flex flex-col">
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
                 JobLens Agent
               </h1>
-              <p className="text-sm text-gray-600 -mt-1">
+              <p className="text-xs text-gray-600 -mt-1">
                 ai-powered recruitment intelligence
               </p>
             </div>
@@ -128,7 +199,7 @@ const Index = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8 relative">
+      <main className="container mx-auto px-4 py-6 relative">
         {/* Blurred overlay when not authenticated */}
         {!isAuthenticated && (
           <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-30 flex items-center justify-center">
@@ -162,7 +233,7 @@ const Index = () => {
 
         {/* Main Dashboard - Job Description and Resume Inputs */}
         {isAuthenticated && (
-          <div className="grid lg:grid-cols-2 gap-8 mb-8">
+          <div className="grid lg:grid-cols-2 gap-8 mb-4">
             <div className="h-[600px]">
               <JobDescriptionInput />
             </div>
@@ -179,7 +250,7 @@ const Index = () => {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-xl">Processing Results</CardTitle>
+                    <CardTitle className="text-xl">Results</CardTitle>
                     <CardDescription>
                       Candidate analysis and ATS scoring results
                     </CardDescription>
@@ -202,6 +273,10 @@ const Index = () => {
                       <TableHead>Phone</TableHead>
                       <TableHead>ATS Score</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Video Interview</TableHead>
+                      <TableHead>Analysis</TableHead>
+                      <TableHead>Communication</TableHead>
+                      <TableHead>Shortlist</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -213,17 +288,55 @@ const Index = () => {
                         <TableCell>
                           <span className={`font-semibold ${
                             candidate.atsScore >= 85 ? 'text-green-600' : 
-                            candidate.atsScore >= 70 ? 'text-yellow-600' : 'text-red-600'
+                            candidate.atsScore >= 70 ? 'text-yellow-600' : 
+                            candidate.atsScore >= 20 ? 'text-orange-600' : 'text-red-600'
                           }`}>
                             {candidate.atsScore}%
                           </span>
                         </TableCell>
                         <TableCell>
                           <span className={`px-2 py-1 rounded-full text-xs ${
-                            candidate.status === 'Qualified' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                            candidate.status === 'Qualified' ? 'bg-green-100 text-green-800' : 
+                            candidate.status === 'Review' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
                           }`}>
                             {candidate.status}
                           </span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            {candidate.videoInterviewStatus === 'Completed' && <CheckCircle className="h-4 w-4 text-green-600" />}
+                            {candidate.videoInterviewStatus === 'Pending' && <Clock className="h-4 w-4 text-yellow-600" />}
+                            {candidate.videoInterviewStatus === 'Scheduled' && <Video className="h-4 w-4 text-blue-600" />}
+                            <span className="text-sm">{candidate.videoInterviewStatus}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm">{candidate.videoAnalysis}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            {candidate.interviewEmailSent ? (
+                              <div className="flex items-center text-green-600">
+                                <Send className="h-4 w-4 mr-1" />
+                                <span className="text-xs">Sent</span>
+                              </div>
+                            ) : (
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => sendInterviewEmail(candidate)}
+                                disabled={candidate.atsScore < 20}
+                                className="text-xs"
+                              >
+                                Send Invite
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Checkbox
+                            checked={candidate.shortlisted}
+                            onCheckedChange={(checked) => handleShortlist(candidate.id, checked as boolean)}
+                          />
                         </TableCell>
                       </TableRow>
                     ))}
