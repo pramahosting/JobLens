@@ -2,40 +2,55 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
+import { FolderOpen, Undo2, Users, CheckCircle, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { FolderOpen, Undo2 } from 'lucide-react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'; // make sure Tabs components are imported
 import { useToast } from '@/hooks/use-toast';
 
 const ResumeFolderInput = () => {
   const [folderPath, setFolderPath] = useState('');
   const [cloudLink, setCloudLink] = useState('');
-  const [selectedTab, setSelectedTab] = useState<'folder' | 'cloud'>('folder');
+  const [progress, setProgress] = useState(0);
+  const [results, setResults] = useState<any[]>([]);
+  const [isCompleted, setIsCompleted] = useState(false);
   const { toast } = useToast();
 
-  // Handle folder input selection
   const handleFolderSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
       setFolderPath(`${files.length} files selected`);
       toast({
-        title: 'Folder selected',
+        title: "Folder selected",
         description: `Found ${files.length} resume files`,
       });
-    } else {
-      setFolderPath('');
     }
   };
 
-  // Reset function clears both inputs and resets tab
   const handleReset = () => {
     setFolderPath('');
     setCloudLink('');
-    setSelectedTab('folder');
+    setProgress(0);
+    setResults([]);
+    setIsCompleted(false);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'qualified': return 'text-green-600 bg-green-50';
+      case 'review': return 'text-yellow-600 bg-yellow-50';
+      default: return 'text-red-600 bg-red-50';
+    }
+  };
+
+  const getScoreColor = (score: number) => {
+    if (score >= 85) return 'text-green-600';
+    if (score >= 70) return 'text-yellow-600';
+    return 'text-red-600';
   };
 
   return (
-    <Card className="h-[400px] border-0 shadow-lg bg-white/80 backdrop-blur-sm flex flex-col">
+    <Card className="h-full border-0 shadow-lg bg-white/80 backdrop-blur-sm flex flex-col">
       <CardHeader>
         <div className="flex items-center space-x-2">
           <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
@@ -44,18 +59,20 @@ const ResumeFolderInput = () => {
           <div>
             <CardTitle className="text-xl">Resume Input</CardTitle>
             <CardDescription>
-              Upload resumes via folder or provide cloud folder URL
+              Upload resumes via folder or provide cloud folder link
             </CardDescription>
           </div>
         </div>
+        {isCompleted && (
+          <div className="flex items-center space-x-2 text-green-600 bg-green-50 p-2 rounded-lg mt-2">
+            <CheckCircle className="h-4 w-4" />
+            <span className="text-sm font-medium">{results.length} resumes processed successfully</span>
+          </div>
+        )}
       </CardHeader>
 
       <CardContent className="space-y-4 flex-grow overflow-auto">
-        <Tabs
-          value={selectedTab}
-          onValueChange={(val) => setSelectedTab(val as 'folder' | 'cloud')}
-          className="w-full"
-        >
+        <Tabs defaultValue="folder" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-4">
             <TabsTrigger value="folder">Folder Upload</TabsTrigger>
             <TabsTrigger value="cloud">Cloud Folder Link</TabsTrigger>
@@ -87,9 +104,9 @@ const ResumeFolderInput = () => {
                     className="absolute left-0 top-0 opacity-0 w-full h-full cursor-pointer"
                   />
                 </div>
-              </div>
-              <div className="bg-purple-50 text-purple-800 text-sm p-2 mt-2 rounded-md min-h-[24px]">
-                {folderPath || 'No folder chosen'}
+                <p className="text-sm text-gray-700 mt-2">
+                  {folderPath || 'No folder chosen'}
+                </p>
               </div>
             </div>
           </TabsContent>
@@ -97,26 +114,98 @@ const ResumeFolderInput = () => {
           {/* Cloud Folder Link Tab */}
           <TabsContent value="cloud">
             <div className="space-y-2">
-              <Label htmlFor="cloud-link-input">Cloud Folder URL</Label>
-              <Input
-                id="cloud-link-input"
-                type="url"
-                placeholder="https://example.com/path/to/resume-folder"
-                value={cloudLink}
-                onChange={(e) => setCloudLink(e.target.value)}
-              />
+              <Label htmlFor="cloud-link">Cloud Folder URL</Label>
+              <div className="relative">
+                <Link2 className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  id="cloud-link"
+                  type="url"
+                  placeholder="https://drive.google.com/your-resume-folder"
+                  value={cloudLink}
+                  onChange={(e) => setCloudLink(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
             </div>
           </TabsContent>
         </Tabs>
 
-        <div className="flex justify-end">
+        {progress > 0 && progress < 100 && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between text-sm">
+              <span>Processing resumes...</span>
+              <span>{progress}%</span>
+            </div>
+            <Progress value={progress} className="w-full" />
+          </div>
+        )}
+
+        {results.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="font-semibold text-gray-800">Processing Results</h4>
+              <div className="flex items-center text-sm text-gray-600">
+                <Users className="h-4 w-4 mr-1" />
+                {results.length} candidates
+              </div>
+            </div>
+
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {results.map((candidate, index) => (
+                <div key={index} className="border rounded-lg p-4 bg-white">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <h5 className="font-semibold text-gray-900">{candidate.name}</h5>
+                      <p className="text-sm text-gray-600">{candidate.email}</p>
+                      <p className="text-sm text-gray-600">{candidate.phone}</p>
+                    </div>
+                    <div className="text-right">
+                      <div className={`text-2xl font-bold ${getScoreColor(candidate.atsScore)}`}>
+                        {candidate.atsScore}%
+                      </div>
+                      <div className={`text-xs px-2 py-1 rounded-full ${getStatusColor(candidate.status)}`}>
+                        {candidate.status === 'qualified' ? 'Qualified' : 'Needs Review'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="font-medium text-green-700 mb-1">Strengths:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {candidate.strengths.map((s: string, i: number) => (
+                          <span key={i} className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
+                            {s}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="font-medium text-orange-700 mb-1">Gaps:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {candidate.gaps.map((g: string, i: number) => (
+                          <span key={i} className="bg-orange-100 text-orange-800 px-2 py-1 rounded text-xs">
+                            {g}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Reset button aligned to bottom right */}
+        <div className="flex justify-end mt-4">
           <Button
             variant="ghost"
             onClick={handleReset}
-            className="text-red-500 hover:text-red-700 flex items-center space-x-1"
+            className="text-red-500 hover:text-red-700"
           >
-            <Undo2 className="w-4 h-4" />
-            <span>Reset</span>
+            <Undo2 className="w-4 h-4 mr-1" />
+            Reset
           </Button>
         </div>
       </CardContent>
@@ -125,4 +214,3 @@ const ResumeFolderInput = () => {
 };
 
 export default ResumeFolderInput;
-
