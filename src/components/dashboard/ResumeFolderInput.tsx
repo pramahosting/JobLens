@@ -1,16 +1,13 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { FolderOpen, Users, Zap, CheckCircle, AlertCircle } from 'lucide-react';
+import { FolderOpen, Users, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const ResumeFolderInput = () => {
   const [folderPath, setFolderPath] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [results, setResults] = useState<any[]>([]);
   const [isCompleted, setIsCompleted] = useState(false);
@@ -25,82 +22,6 @@ const ResumeFolderInput = () => {
         description: `Found ${files.length} resume files`,
       });
     }
-  };
-
-  const simulateProcessing = () => {
-    setProgress(0);
-    const interval = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsCompleted(true);
-          setIsProcessing(false);
-          
-          // Mock results
-          setResults([
-            {
-              name: "John Smith",
-              email: "john.smith@email.com",
-              phone: "+1-555-0123",
-              atsScore: 92,
-              strengths: ["React", "Node.js", "AWS", "Leadership"],
-              gaps: ["Python", "Machine Learning"],
-              status: "qualified"
-            },
-            {
-              name: "Sarah Johnson",
-              email: "sarah.j@email.com", 
-              phone: "+1-555-0124",
-              atsScore: 88,
-              strengths: ["JavaScript", "TypeScript", "React", "Database Design"],
-              gaps: ["DevOps", "Microservices"],
-              status: "qualified"
-            },
-            {
-              name: "Mike Davis",
-              email: "mike.davis@email.com",
-              phone: "+1-555-0125", 
-              atsScore: 65,
-              strengths: ["HTML", "CSS", "Basic JavaScript"],
-              gaps: ["React", "Backend Development", "Cloud Platforms"],
-              status: "review"
-            }
-          ]);
-          
-          toast({
-            title: "Processing complete",
-            description: "All resumes have been analyzed successfully",
-          });
-          
-          return 100;
-        }
-        return prev + 10;
-      });
-    }, 300);
-  };
-
-  const handleProcess = () => {
-    if (!folderPath) {
-      toast({
-        title: "Error",
-        description: "Please select a folder with resume files",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsProcessing(true);
-    setIsCompleted(false);
-    setResults([]);
-    simulateProcessing();
-  };
-
-  const handleReset = () => {
-    setFolderPath('');
-    setProgress(0);
-    setResults([]);
-    setIsCompleted(false);
-    setIsProcessing(false);
   };
 
   const getStatusColor = (status: string) => {
@@ -118,7 +39,7 @@ const ResumeFolderInput = () => {
   };
 
   return (
-    <Card className="h-fit border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+    <Card className="h-full border-0 shadow-lg bg-white/80 backdrop-blur-sm flex flex-col">
       <CardHeader>
         <div className="flex items-center space-x-2">
           <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
@@ -132,14 +53,14 @@ const ResumeFolderInput = () => {
           </div>
         </div>
         {isCompleted && (
-          <div className="flex items-center space-x-2 text-green-600 bg-green-50 p-2 rounded-lg">
+          <div className="flex items-center space-x-2 text-green-600 bg-green-50 p-2 rounded-lg mt-2">
             <CheckCircle className="h-4 w-4" />
             <span className="text-sm font-medium">{results.length} resumes processed successfully</span>
           </div>
         )}
       </CardHeader>
       
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 flex-grow overflow-auto">
         <div className="space-y-2">
           <Label htmlFor="folder-input">Select Resume Folder</Label>
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition-colors">
@@ -165,7 +86,8 @@ const ResumeFolderInput = () => {
           )}
         </div>
 
-        {isProcessing && (
+        {/* Progress bar and results display can stay, but no manual process button */}
+        {progress > 0 && progress < 100 && (
           <div className="space-y-3">
             <div className="flex items-center justify-between text-sm">
               <span>Processing resumes...</span>
@@ -174,36 +96,6 @@ const ResumeFolderInput = () => {
             <Progress value={progress} className="w-full" />
           </div>
         )}
-
-        <div className="flex space-x-3">
-          <Button 
-            onClick={handleProcess}
-            disabled={isProcessing}
-            className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-          >
-            {isProcessing ? (
-              <>
-                <Zap className="h-4 w-4 mr-2 animate-pulse" />
-                Processing Resumes...
-              </>
-            ) : (
-              <>
-                <Zap className="h-4 w-4 mr-2" />
-                Process with AI
-              </>
-            )}
-          </Button>
-          
-          {(isCompleted || folderPath) && (
-            <Button 
-              onClick={handleReset}
-              variant="outline"
-              className="border-purple-200 hover:bg-purple-50"
-            >
-              Reset
-            </Button>
-          )}
-        </div>
 
         {results.length > 0 && (
           <div className="space-y-4">
