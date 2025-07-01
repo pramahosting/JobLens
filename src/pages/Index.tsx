@@ -165,8 +165,8 @@ const Index = () => {
               <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
                 JobLens Agent
               </h1>
-              <p className="text-xs text-gray-600 -mt-1">
-                ai-powered recruitment intelligence
+              <p className="text-xs text-gray-600 mt-1">
+                ai-powered recruitment platform
               </p>
             </div>
           </div>
