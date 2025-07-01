@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import AuthModal from '@/components/auth/AuthModal';
 import JobDescriptionInput from '@/components/dashboard/JobDescriptionInput';
 import ResumeFolderInput from '@/components/dashboard/ResumeFolderInput';
-import { Users, Video, Mail, Download, CheckCircle, Clock, Send, Brain } from 'lucide-react';
+import { Users, Video, Mail, Download, Brain } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
@@ -34,7 +34,7 @@ const Index = () => {
     },
     {
       id: 2,
-      name: "Sarah Johnson", 
+      name: "Sarah Johnson",
       email: "sarah.j@email.com",
       phone: "+1-555-0124",
       atsScore: 88,
@@ -49,7 +49,7 @@ const Index = () => {
     {
       id: 3,
       name: "Mike Davis",
-      email: "mike.davis@email.com", 
+      email: "mike.davis@email.com",
       phone: "+1-555-0125",
       atsScore: 65,
       status: "Review",
@@ -100,9 +100,9 @@ const Index = () => {
   };
 
   const handleExcelDownload = () => {
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + "Name,Email,Phone,ATS Score,Status,Video Status,Analysis,Shortlisted\n"
-      + results.map(r => `${r.name},${r.email},${r.phone},${r.atsScore}%,${r.status},${r.videoInterviewStatus},${r.videoAnalysis},${r.shortlisted ? 'Yes' : 'No'}`).join("\n");
+    const csvContent = "data:text/csv;charset=utf-8," +
+      "Name,Email,Phone,ATS Score,Status,Video Status,Analysis,Shortlisted\n" +
+      results.map(r => `${r.name},${r.email},${r.phone},${r.atsScore}%,${r.status},${r.videoInterviewStatus},${r.videoAnalysis},${r.shortlisted ? 'Yes' : 'No'}`).join("\n");
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -129,15 +129,6 @@ const Index = () => {
     }));
   };
 
-  const sendInterviewEmail = (candidate: any) => {
-    if (candidate.atsScore >= 20) {
-      toast({
-        title: "Interview Email Sent",
-        description: `Video interview invitation sent to ${candidate.name}`,
-      });
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-40">
@@ -155,7 +146,6 @@ const Index = () => {
               </p>
             </div>
           </div>
-
           {!isAuthenticated && (
             <div className="space-x-2">
               <Button variant="ghost" onClick={handleLogin}>Login</Button>
@@ -164,19 +154,13 @@ const Index = () => {
               </Button>
             </div>
           )}
-
           {isAuthenticated && (
-            <Button 
-              variant="outline" 
-              onClick={() => setIsAuthenticated(false)}
-              className="border-purple-200 hover:bg-purple-50"
-            >
+            <Button variant="outline" onClick={() => setIsAuthenticated(false)} className="border-purple-200 hover:bg-purple-50">
               Logout
             </Button>
           )}
         </div>
       </header>
-
       <main className="container mx-auto px-4 py-6 relative">
         {!isAuthenticated && (
           <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-30 flex items-center justify-center">
@@ -200,85 +184,69 @@ const Index = () => {
             </Card>
           </div>
         )}
-
         {isAuthenticated && (
           <>
-            <div className="grid lg:grid-cols-2 gap-8 mb-4">
-              <div className="h-[600px]">
+            <div className="grid lg:grid-cols-2 gap-8 mb-8">
+              <div className="h-[400px]">
                 <JobDescriptionInput />
               </div>
-              <div className="h-[600px]">
+              <div className="h-[400px]">
                 <ResumeFolderInput />
               </div>
             </div>
-
-            <div className="text-center mb-6 mt-10">
-              <Button
-                onClick={simulateProcessing}
-                disabled={isProcessing}
-                size="lg"
-                className="px-8 py-3 text-lg font-semibold bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 shadow-lg text-white"
-              >
+            <div className="text-center mb-10">
+              <Button onClick={simulateProcessing} disabled={isProcessing} size="lg" className="px-8 py-3 text-lg font-semibold bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 shadow-lg text-white">
                 <Brain className="w-5 h-5 mr-2" />
                 {isProcessing ? 'Processing...' : 'Run Agent'}
               </Button>
             </div>
-
-            {/* Default Results Table before processing */}
-            <div className="bg-white shadow rounded-lg p-4 mb-8">
-              <div className="flex justify-between items-center mb-2">
-                <h2 className="text-lg font-semibold text-gray-800">Candidate Results</h2>
-                <Button onClick={handleExcelDownload} className="bg-white border shadow-sm text-sm">
-                  <Download className="h-4 w-4 mr-2" />
-                  Download Excel
+            <div className="mb-10">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold text-gray-700">Sample Results</h2>
+                <Button onClick={handleExcelDownload} className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-100">
+                  <Download className="w-4 h-4 mr-2" />Download CSV
                 </Button>
               </div>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>ATS Score</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Interview Status</TableHead>
-                    <TableHead>Analysis</TableHead>
-                    <TableHead>Shortlisted</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {results.map((candidate) => (
-                    <TableRow key={candidate.id}>
-                      <TableCell>{candidate.name}</TableCell>
-                      <TableCell>{candidate.email}</TableCell>
-                      <TableCell>{candidate.phone}</TableCell>
-                      <TableCell>{candidate.atsScore}%</TableCell>
-                      <TableCell>{candidate.status}</TableCell>
-                      <TableCell>{candidate.videoInterviewStatus}</TableCell>
-                      <TableCell>{candidate.videoAnalysis}</TableCell>
-                      <TableCell>
-                        <Checkbox 
-                          checked={candidate.shortlisted}
-                          onCheckedChange={(checked) => handleShortlist(candidate.id, checked as boolean)}
-                        />
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Shortlist</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Phone</TableHead>
+                      <TableHead>ATS Score</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Video Status</TableHead>
+                      <TableHead>Analysis</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {results.map(candidate => (
+                      <TableRow key={candidate.id}>
+                        <TableCell>
+                          <Checkbox checked={candidate.shortlisted} onCheckedChange={(checked) => handleShortlist(candidate.id, !!checked)} />
+                        </TableCell>
+                        <TableCell>{candidate.name}</TableCell>
+                        <TableCell>{candidate.email}</TableCell>
+                        <TableCell>{candidate.phone}</TableCell>
+                        <TableCell>{candidate.atsScore}%</TableCell>
+                        <TableCell>{candidate.status}</TableCell>
+                        <TableCell>{candidate.videoInterviewStatus}</TableCell>
+                        <TableCell>{candidate.videoAnalysis}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           </>
         )}
       </main>
-
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        mode={authMode}
-        onSuccess={handleAuthSuccess}
-      />
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} mode={authMode} onSuccess={handleAuthSuccess} />
     </div>
   );
 };
 
 export default Index;
+
