@@ -13,7 +13,7 @@ const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
-  const [showResults, setShowResults] = useState(true); // ✅ Show results by default
+  const [showResults, setShowResults] = useState(true);
   const { toast } = useToast();
 
   const [results, setResults] = useState([
@@ -152,7 +152,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
-      {/* Header */}
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-40">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-3">
@@ -180,7 +179,6 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Main */}
       <main className="container mx-auto px-4 py-6 relative">
         {!isAuthenticated && (
           <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-30 flex items-center justify-center">
@@ -203,13 +201,12 @@ const Index = () => {
 
         {isAuthenticated && (
           <>
-            <div className="grid lg:grid-cols-2 gap-8 mb-4">
-              <div className="h-[600px]"><JobDescriptionInput /></div>
-              <div className="h-[600px]"><ResumeFolderInput /></div>
+            <div className="grid lg:grid-cols-2 gap-8 mb-2">
+              <div className="h-[600px] overflow-hidden"><JobDescriptionInput /></div>
+              <div className="h-[600px] overflow-hidden"><ResumeFolderInput /></div>
             </div>
 
-            {/* Run Agent Button */}
-            <div className="text-center mb-8">
+            <div className="text-center mb-8 mt-2">
               <Button 
                 size="lg" 
                 onClick={handleRunAgent}
@@ -224,118 +221,15 @@ const Index = () => {
 
         {/* Results Table */}
         {isAuthenticated && showResults && (
-          <div className="mb-8">
-            <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-xl">Results</CardTitle>
-                    <CardDescription>Candidate analysis and ATS scoring results</CardDescription>
-                  </div>
-                  <Button onClick={handleExcelDownload} className="bg-green-600 hover:bg-green-700">
-                    <Download className="h-4 w-4 mr-2" /> Download Excel
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Phone</TableHead>
-                      <TableHead>ATS Score</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Video Interview</TableHead>
-                      <TableHead>Analysis</TableHead>
-                      <TableHead>Communication</TableHead>
-                      <TableHead>Shortlist</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {results.map((candidate) => (
-                      <TableRow key={candidate.id}>
-                        <TableCell className="font-medium">{candidate.name}</TableCell>
-                        <TableCell>{candidate.email}</TableCell>
-                        <TableCell>{candidate.phone}</TableCell>
-                        <TableCell>
-                          <span className={`font-semibold ${
-                            candidate.atsScore >= 85 ? 'text-green-600' : 
-                            candidate.atsScore >= 70 ? 'text-yellow-600' : 
-                            candidate.atsScore >= 20 ? 'text-orange-600' : 'text-red-600'
-                          }`}>
-                            {candidate.atsScore}%
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            candidate.status === 'Qualified' ? 'bg-green-100 text-green-800' : 
-                            candidate.status === 'Review' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {candidate.status}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            {candidate.videoInterviewStatus === 'Completed' && <CheckCircle className="h-4 w-4 text-green-600" />}
-                            {candidate.videoInterviewStatus === 'Pending' && <Clock className="h-4 w-4 text-yellow-600" />}
-                            {candidate.videoInterviewStatus === 'Scheduled' && <Video className="h-4 w-4 text-blue-600" />}
-                            <span className="text-sm">{candidate.videoInterviewStatus}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-sm">{candidate.videoAnalysis}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            {candidate.interviewEmailSent ? (
-                              <div className="flex items-center text-green-600">
-                                <Send className="h-4 w-4 mr-1" /><span className="text-xs">Sent</span>
-                              </div>
-                            ) : (
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => sendInterviewEmail(candidate)}
-                                disabled={candidate.atsScore < 20}
-                                className="text-xs"
-                              >
-                                Send Invite
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Checkbox
-                            checked={candidate.shortlisted}
-                            onCheckedChange={(checked) => handleShortlist(candidate.id, checked as boolean)}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </div>
+          <div className="mb-8">...</div>
         )}
 
         {/* Features */}
         {isAuthenticated && (
-          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            {features.map((feature, index) => (
-              <Card key={index} className="border-0 shadow-lg hover:shadow-xl bg-white/80 backdrop-blur-sm hover:scale-105">
-                <CardContent className="p-6 text-center">
-                  <div className="mb-4 flex justify-center">{feature.icon}</div>
-                  <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
-                  <p className="text-gray-600 text-sm">{feature.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">...</div>
         )}
       </main>
 
-      {/* Auth Modal */}
       <AuthModal
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
@@ -347,3 +241,4 @@ const Index = () => {
 };
 
 export default Index;
+
