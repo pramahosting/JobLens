@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileText, Upload, Link2, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+const handleReset = () => { setJobDescription('');};
 const JobDescriptionInput = () => {
   const [jobDescription, setJobDescription] = useState('');
   const [fileUrl, setFileUrl] = useState('');
@@ -15,7 +16,6 @@ const JobDescriptionInput = () => {
   const [activeTab, setActiveTab] = useState('text');
   const { toast } = useToast();
   
-  const handleReset = () => { setJobDescription('');};
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
