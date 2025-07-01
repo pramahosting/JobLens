@@ -13,7 +13,7 @@ const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
-  const [showResults, setShowResults] = useState(true); // Always show sample results by default
+  const [showResults, setShowResults] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
@@ -101,8 +101,10 @@ const Index = () => {
 
   const handleExcelDownload = () => {
     const csvContent = "data:text/csv;charset=utf-8," 
-      + "Name,Email,Phone,ATS Score,Status,Video Status,Analysis,Shortlisted\n"
-      + results.map(r => `${r.name},${r.email},${r.phone},${r.atsScore}%,${r.status},${r.videoInterviewStatus},${r.videoAnalysis},${r.shortlisted ? 'Yes' : 'No'}`).join("\n");
+      + "Name,Email,Phone,ATS Score,Key Strength,Gap in Skills,Status,Video Status,Video Analysis,Shortlisted\n"
+      + results.map(r => 
+        `${r.name},${r.email},${r.phone},${r.atsScore}%,Relevant Experience,Cloud, ML Ops,${r.status},${r.videoInterviewStatus},${r.videoAnalysis},${r.shortlisted ? 'Yes' : 'No'}`
+      ).join("\n");
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -137,6 +139,19 @@ const Index = () => {
       });
     }
   };
+
+  const features = [
+    {
+      icon: <Video className="h-8 w-8 text-green-600" />,
+      title: "AI Video Interviews",
+      description: "Automated video interviews with AI avatars"
+    },
+    {
+      icon: <Mail className="h-8 w-8 text-orange-600" />,
+      title: "Smart Communication",
+      description: "Automated candidate communication and follow-ups"
+    }
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
@@ -223,48 +238,83 @@ const Index = () => {
                 {isProcessing ? 'Processing...' : 'Run Agent'}
               </Button>
             </div>
-
-            {showResults && (
-              <div className="mb-8">
-                <div className="flex justify-between items-center mb-2">
-                  <h2 className="text-xl font-semibold text-purple-700">Sample Candidate Results</h2>
-                  <Button onClick={handleExcelDownload} className="bg-white border text-blue-600 border-blue-400 hover:bg-blue-50">
-                    <Download className="w-4 h-4 mr-2" /> Download CSV
-                  </Button>
-                </div>
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-purple-100">
-                      <TableHead className="text-purple-900">Shortlist</TableHead>
-                      <TableHead className="text-purple-900">Name</TableHead>
-                      <TableHead className="text-purple-900">Email</TableHead>
-                      <TableHead className="text-purple-900">Phone</TableHead>
-                      <TableHead className="text-purple-900">ATS Score</TableHead>
-                      <TableHead className="text-purple-900">Status</TableHead>
-                      <TableHead className="text-purple-900">Video Interview</TableHead>
-                      <TableHead className="text-purple-900">Analysis</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {results.map((r) => (
-                      <TableRow key={r.id} className="bg-white even:bg-slate-50">
-                        <TableCell>
-                          <Checkbox checked={r.shortlisted} onCheckedChange={(checked: boolean) => handleShortlist(r.id, checked)} />
-                        </TableCell>
-                        <TableCell>{r.name}</TableCell>
-                        <TableCell>{r.email}</TableCell>
-                        <TableCell>{r.phone}</TableCell>
-                        <TableCell className="text-center font-semibold text-blue-600">{r.atsScore}%</TableCell>
-                        <TableCell>{r.status}</TableCell>
-                        <TableCell>{r.videoInterviewStatus}</TableCell>
-                        <TableCell>{r.videoAnalysis}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
           </>
+        )}
+
+        {isAuthenticated && (showResults || true) && (
+          <div className="mb-8">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-purple-700">Sample Candidate Results</h2>
+              <Button
+                onClick={handleExcelDownload}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Download Excel
+              </Button>
+            </div>
+            <div className="overflow-x-auto bg-white shadow-md rounded-lg">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-purple-100 text-purple-700 font-semibold">
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead>ATS Score</TableHead>
+                    <TableHead>Key Strength</TableHead>
+                    <TableHead>Gap in Skills</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Video Status</TableHead>
+                    <TableHead>Video Analysis</TableHead>
+                    <TableHead>Shortlist</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {results.map((candidate) => (
+                    <TableRow key={candidate.id} className="hover:bg-blue-50">
+                      <TableCell>{candidate.name}</TableCell>
+                      <TableCell>{candidate.email}</TableCell>
+                      <TableCell>{candidate.phone}</TableCell>
+                      <TableCell
+                        className={
+                          candidate.atsScore >= 85
+                            ? 'text-green-600 font-semibold'
+                            : candidate.atsScore >= 50
+                            ? 'text-yellow-600 font-semibold'
+                            : 'text-red-600 font-semibold'
+                        }
+                      >
+                        {candidate.atsScore}%
+                      </TableCell>
+                      <TableCell>Relevant Experience</TableCell>
+                      <TableCell>Cloud, ML Ops</TableCell>
+                      <TableCell
+                        className={
+                          candidate.status === 'Qualified'
+                            ? 'text-green-600 font-semibold'
+                            : candidate.status === 'Review'
+                            ? 'text-yellow-600 font-semibold'
+                            : 'text-red-600 font-semibold'
+                        }
+                      >
+                        {candidate.status}
+                      </TableCell>
+                      <TableCell>{candidate.videoInterviewStatus}</TableCell>
+                      <TableCell>{candidate.videoAnalysis}</TableCell>
+                      <TableCell>
+                        <Checkbox
+                          checked={candidate.shortlisted}
+                          onCheckedChange={(checked) =>
+                            handleShortlist(candidate.id, Boolean(checked))
+                          }
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
         )}
       </main>
 
@@ -279,3 +329,4 @@ const Index = () => {
 };
 
 export default Index;
+
