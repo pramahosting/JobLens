@@ -56,38 +56,59 @@ const ResumeFolderInput = () => {
       </CardHeader>
 
       <CardContent className="space-y-4 flex-grow overflow-auto">
-        <Tabs defaultValue="folder" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="folder">Folder Upload</TabsTrigger>
-            <TabsTrigger value="cloud">Cloud Folder Link</TabsTrigger>
-          </TabsList>
+  <Tabs defaultValue="folder" className="w-full">
+    <TabsList className="grid w-full grid-cols-2 mb-4">
+      <TabsTrigger value="folder">Folder Upload</TabsTrigger>
+      <TabsTrigger value="cloud">Cloud Folder Link</TabsTrigger>
+    </TabsList>
 
-          {/* Folder Upload Tab */}
-          <TabsContent value="folder">
-            <div className="space-y-2">
-              <Label htmlFor="folder-input">Choose Folder</Label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition-colors">
-                <FolderOpen className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-sm text-gray-600 mb-4">
-                  Upload a folder containing resume files (.pdf, .docx)
-                </p>
-                <Input
-                  id="folder-input"
-                  type="file"
-                  multiple
-                  accept=".pdf,.docx"
-                  webkitdirectory="true"
-                  directory=""
-                  onChange={handleFolderSelect}
-                  className="max-w-xs mx-auto"
-                />
-              </div>
-              <div className="bg-purple-50 text-purple-800 text-sm p-2 mt-2 rounded-md">
-                {folderPath || 'No folder chosen'}
-              </div>
-            </div>
-          </TabsContent>
+    {/* Folder Upload Tab */}
+    <TabsContent value="folder">
+      <div className="space-y-2">
+        <Label htmlFor="folder-input">Choose Folder</Label>
+        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition-colors">
+          <FolderOpen className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+          <p className="text-sm text-gray-600 mb-4">
+            Upload a folder containing resume files (.pdf, .docx)
+          </p>
+          <div className="relative inline-block">
+            <label htmlFor="folder-input">
+              <Button variant="outline" className="text-sm">
+                📁 Choose Folder
+              </Button>
+            </label>
+            <Input
+              id="folder-input"
+              type="file"
+              multiple
+              accept=".pdf,.docx"
+              webkitdirectory="true"
+              directory=""
+              onChange={handleFolderSelect}
+              className="absolute left-0 top-0 opacity-0 w-full h-full cursor-pointer"
+            />
+          </div>
+        </div>
+        <div className="bg-purple-50 text-purple-800 text-sm p-2 mt-2 rounded-md">
+          {folderPath || 'No folder chosen'}
+        </div>
+      </div>
+    </TabsContent>
 
+    {/* Cloud Folder Link Tab */}
+    <TabsContent value="cloud">
+      <div className="space-y-2">
+        <Label htmlFor="cloud-link">Cloud Folder URL</Label>
+        <Input
+          id="cloud-link"
+          type="url"
+          placeholder="Enter a shared Google Drive, Dropbox, or OneDrive link"
+          className="w-full"
+        />
+      </div>
+    </TabsContent>
+  </Tabs>
+</CardContent>
           {/* Cloud Folder Tab */}
           <TabsContent value="cloud">
             <div className="space-y-2">
