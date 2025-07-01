@@ -3,11 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { FolderOpen, Users, CheckCircle } from 'lucide-react';
+import { FolderOpen, Users, CheckCircle, Link as LinkIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const ResumeFolderInput = () => {
   const [folderPath, setFolderPath] = useState('');
+  const [cloudLink, setCloudLink] = useState('');
   const [progress, setProgress] = useState(0);
   const [results, setResults] = useState<any[]>([]);
   const [isCompleted, setIsCompleted] = useState(false);
@@ -22,6 +23,15 @@ const ResumeFolderInput = () => {
         description: `Found ${files.length} resume files`,
       });
     }
+  };
+
+  const handleCloudLinkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const url = e.target.value;
+    setCloudLink(url);
+    toast({
+      title: "Cloud link received",
+      description: `Cloud folder: ${url}`,
+    });
   };
 
   const getStatusColor = (status: string) => {
@@ -48,7 +58,7 @@ const ResumeFolderInput = () => {
           <div>
             <CardTitle className="text-xl">Resume Folder Input</CardTitle>
             <CardDescription>
-              Select a folder containing multiple resume files
+              Upload local resumes or paste a cloud folder link
             </CardDescription>
           </div>
         </div>
@@ -61,6 +71,7 @@ const ResumeFolderInput = () => {
       </CardHeader>
       
       <CardContent className="space-y-6 flex-grow overflow-auto">
+        {/* Local Folder Upload */}
         <div className="space-y-2">
           <Label htmlFor="folder-input">Select Resume Folder</Label>
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition-colors">
@@ -72,6 +83,8 @@ const ResumeFolderInput = () => {
               id="folder-input"
               type="file"
               multiple
+              webkitdirectory="true"
+              directory=""
               accept=".pdf,.docx"
               onChange={handleFolderSelect}
               className="max-w-xs mx-auto"
@@ -86,7 +99,30 @@ const ResumeFolderInput = () => {
           )}
         </div>
 
-        {/* Progress bar and results display can stay, but no manual process button */}
+        {/* Cloud Link Input */}
+        <div className="space-y-2">
+          <Label htmlFor="cloud-link">Or Paste Cloud Folder Link</Label>
+          <div className="relative">
+            <Input
+              id="cloud-link"
+              type="url"
+              value={cloudLink}
+              onChange={handleCloudLinkChange}
+              placeholder="https://drive.google.com/drive/folders/..."
+              className="pl-10"
+            />
+            <LinkIcon className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+          </div>
+          {cloudLink && (
+            <p className="text-sm text-blue-700 mt-1">
+              <a href={cloudLink} target="_blank" rel="noopener noreferrer" className="underline">
+                Open Cloud Folder
+              </a>
+            </p>
+          )}
+        </div>
+
+        {/* Progress Bar */}
         {progress > 0 && progress < 100 && (
           <div className="space-y-3">
             <div className="flex items-center justify-between text-sm">
@@ -97,6 +133,7 @@ const ResumeFolderInput = () => {
           </div>
         )}
 
+        {/* Results Section */}
         {results.length > 0 && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -159,3 +196,4 @@ const ResumeFolderInput = () => {
 };
 
 export default ResumeFolderInput;
+
