@@ -3,10 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { FolderOpen, Users, CheckCircle, Link as LinkIcon } from 'lucide-react';
+import { FolderOpen, Users, CheckCircle, Link2Icon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const ResumeFolderInput = () => {
+  const [tab, setTab] = useState<'folder' | 'cloud'>('folder');
   const [folderPath, setFolderPath] = useState('');
   const [cloudLink, setCloudLink] = useState('');
   const [progress, setProgress] = useState(0);
@@ -25,13 +26,13 @@ const ResumeFolderInput = () => {
     }
   };
 
-  const handleCloudLinkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const url = e.target.value;
-    setCloudLink(url);
+  const handleCloudLink = () => {
+    if (cloudLink.trim() === '') return;
     toast({
-      title: "Cloud link received",
-      description: `Cloud folder: ${url}`,
+      title: "Cloud link saved",
+      description: `Linked to: ${cloudLink}`,
     });
+    setFolderPath(`Linked to: ${cloudLink}`);
   };
 
   const getStatusColor = (status: string) => {
@@ -56,73 +57,86 @@ const ResumeFolderInput = () => {
             <FolderOpen className="h-4 w-4 text-white" />
           </div>
           <div>
-            <CardTitle className="text-xl">Resume Folder Input</CardTitle>
+            <CardTitle className="text-xl">Resume Input</CardTitle>
             <CardDescription>
-              Upload local resumes or paste a cloud folder link
+              Upload resumes via folder or provide a cloud folder link
             </CardDescription>
           </div>
         </div>
+
+        <div className="flex mt-4 space-x-4 text-sm font-medium">
+          <button
+            className={`px-3 py-1 rounded-full ${tab === 'folder' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600'}`}
+            onClick={() => setTab('folder')}
+          >
+            Folder Upload
+          </button>
+          <button
+            className={`px-3 py-1 rounded-full ${tab === 'cloud' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600'}`}
+            onClick={() => setTab('cloud')}
+          >
+            Cloud Folder Link
+          </button>
+        </div>
+
         {isCompleted && (
-          <div className="flex items-center space-x-2 text-green-600 bg-green-50 p-2 rounded-lg mt-2">
+          <div className="flex items-center space-x-2 text-green-600 bg-green-50 p-2 rounded-lg mt-3">
             <CheckCircle className="h-4 w-4" />
             <span className="text-sm font-medium">{results.length} resumes processed successfully</span>
           </div>
         )}
       </CardHeader>
-      
+
       <CardContent className="space-y-6 flex-grow overflow-auto">
-        {/* Local Folder Upload */}
-        <div className="space-y-2">
-          <Label htmlFor="folder-input">Select Resume Folder</Label>
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition-colors">
-            <FolderOpen className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-            <p className="text-sm text-gray-600 mb-4">
-              Select a folder containing PDF or DOCX resume files
-            </p>
-            <Input
-              id="folder-input"
-              type="file"
-              multiple
-              webkitdirectory="true"
-              directory=""
-              accept=".pdf,.docx"
-              onChange={handleFolderSelect}
-              className="max-w-xs mx-auto"
-            />
-          </div>
-          {folderPath && (
-            <div className="bg-purple-50 p-3 rounded-lg">
-              <p className="text-sm text-purple-800">
-                <strong>Selected:</strong> {folderPath}
+        {tab === 'folder' && (
+          <div className="space-y-2">
+            <Label htmlFor="folder-input">Select Resume Folder</Label>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition-colors">
+              <FolderOpen className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+              <p className="text-sm text-gray-600 mb-4">
+                Upload PDF or DOCX resumes from a local folder
               </p>
+              <Input
+                id="folder-input"
+                type="file"
+                multiple
+                accept=".pdf,.docx"
+                onChange={handleFolderSelect}
+                className="max-w-xs mx-auto"
+              />
             </div>
-          )}
-        </div>
-
-        {/* Cloud Link Input */}
-        <div className="space-y-2">
-          <Label htmlFor="cloud-link">Or Paste Cloud Folder Link</Label>
-          <div className="relative">
-            <Input
-              id="cloud-link"
-              type="url"
-              value={cloudLink}
-              onChange={handleCloudLinkChange}
-              placeholder="https://drive.google.com/drive/folders/..."
-              className="pl-10"
-            />
-            <LinkIcon className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
           </div>
-          {cloudLink && (
-            <p className="text-sm text-blue-700 mt-1">
-              <a href={cloudLink} target="_blank" rel="noopener noreferrer" className="underline">
-                Open Cloud Folder
-              </a>
-            </p>
-          )}
-        </div>
+        )}
 
-        {/* Progress Bar */}
+        {tab === 'cloud' && (
+          <div className="space-y-2">
+            <Label htmlFor="cloud-link">Enter Cloud Folder Link</Label>
+            <div className="flex space-x-2">
+              <Input
+                id="cloud-link"
+                placeholder="https://drive.google.com/..."
+                value={cloudLink}
+                onChange={(e) => setCloudLink(e.target.value)}
+              />
+              <button
+                onClick={handleCloudLink}
+                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+              >
+                <Link2Icon className="h-4 w-4 inline-block mr-1" />
+                Link
+              </button>
+            </div>
+          </div>
+        )}
+
+        {folderPath && (
+          <div className="bg-purple-50 p-3 rounded-lg">
+            <p className="text-sm text-purple-800">
+              <strong>Selected:</strong> {folderPath}
+            </p>
+          </div>
+        )}
+
         {progress > 0 && progress < 100 && (
           <div className="space-y-3">
             <div className="flex items-center justify-between text-sm">
@@ -133,7 +147,6 @@ const ResumeFolderInput = () => {
           </div>
         )}
 
-        {/* Results Section */}
         {results.length > 0 && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -143,7 +156,7 @@ const ResumeFolderInput = () => {
                 {results.length} candidates
               </div>
             </div>
-            
+
             <div className="space-y-3 max-h-96 overflow-y-auto">
               {results.map((candidate, index) => (
                 <div key={index} className="border rounded-lg p-4 bg-white">
@@ -162,7 +175,7 @@ const ResumeFolderInput = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                     <div>
                       <p className="font-medium text-green-700 mb-1">Strengths:</p>
@@ -196,4 +209,3 @@ const ResumeFolderInput = () => {
 };
 
 export default ResumeFolderInput;
-
