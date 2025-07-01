@@ -13,7 +13,8 @@ const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
-  const [showResults, setShowResults] = useState(true);
+  const [showResults, setShowResults] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
   const [results, setResults] = useState([
@@ -88,14 +89,21 @@ const Index = () => {
   const handleAuthSuccess = () => {
     setIsAuthenticated(true);
     setShowAuthModal(false);
-    setTimeout(() => setShowResults(true), 1000);
+  };
+
+  const simulateProcessing = () => {
+    setIsProcessing(true);
+    setTimeout(() => {
+      setShowResults(true);
+      setIsProcessing(false);
+    }, 2000);
   };
 
   const handleExcelDownload = () => {
     const csvContent = "data:text/csv;charset=utf-8," 
       + "Name,Email,Phone,ATS Score,Status,Video Status,Analysis,Shortlisted\n"
       + results.map(r => `${r.name},${r.email},${r.phone},${r.atsScore}%,${r.status},${r.videoInterviewStatus},${r.videoAnalysis},${r.shortlisted ? 'Yes' : 'No'}`).join("\n");
-    
+
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -112,7 +120,7 @@ const Index = () => {
         if (checked) {
           toast({
             title: "Candidate Shortlisted",
-            description: `${candidate.name} has been shortlisted.`,
+            description: `${candidate.name} has been shortlisted. Staff will be notified to schedule next round.`,
           });
         }
         return updated;
@@ -125,16 +133,9 @@ const Index = () => {
     if (candidate.atsScore >= 20) {
       toast({
         title: "Interview Email Sent",
-        description: `Invitation sent to ${candidate.name}`,
+        description: `Video interview invitation sent to ${candidate.name}`,
       });
     }
-  };
-
-  const handleRunAgent = () => {
-    toast({
-      title: "AI Processing Started",
-      description: "Job description and resumes are being processed",
-    });
   };
 
   const features = [
@@ -162,19 +163,29 @@ const Index = () => {
               <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
                 JobLens Agent
               </h1>
-              <p className="text-xs text-gray-600 -mt-1">ai-powered recruitment intelligence</p>
+              <p className="text-xs text-gray-600 -mt-1">
+                ai-powered recruitment intelligence
+              </p>
             </div>
           </div>
 
           {!isAuthenticated && (
             <div className="space-x-2">
               <Button variant="ghost" onClick={handleLogin}>Login</Button>
-              <Button onClick={handleSignup} className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">Sign Up</Button>
+              <Button onClick={handleSignup} className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
+                Sign Up
+              </Button>
             </div>
           )}
 
           {isAuthenticated && (
-            <Button variant="outline" onClick={() => setIsAuthenticated(false)} className="border-purple-200 hover:bg-purple-50">Logout</Button>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsAuthenticated(false)}
+              className="border-purple-200 hover:bg-purple-50"
+            >
+              Logout
+            </Button>
           )}
         </div>
       </header>
@@ -192,8 +203,12 @@ const Index = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Button onClick={handleLogin} className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">Login</Button>
-                <Button onClick={handleSignup} variant="outline" className="w-full border-purple-200 hover:bg-purple-50">Create Account</Button>
+                <Button onClick={handleLogin} className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
+                  Login
+                </Button>
+                <Button onClick={handleSignup} variant="outline" className="w-full border-purple-200 hover:bg-purple-50">
+                  Create Account
+                </Button>
               </CardContent>
             </Card>
           </div>
@@ -201,32 +216,33 @@ const Index = () => {
 
         {isAuthenticated && (
           <>
-            <div className="grid lg:grid-cols-2 gap-8 mb-2">
-              <div className="h-[600px] overflow-hidden"><JobDescriptionInput /></div>
-              <div className="h-[600px] overflow-hidden"><ResumeFolderInput /></div>
+            <div className="grid lg:grid-cols-2 gap-8 mb-4">
+              <div className="h-[600px]">
+                <JobDescriptionInput />
+              </div>
+              <div className="h-[600px]">
+                <ResumeFolderInput />
+              </div>
             </div>
 
-            <div className="text-center mb-8 mt-2">
-              <Button 
-                size="lg" 
-                onClick={handleRunAgent}
-                className="px-6 py-3 text-lg font-semibold bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 shadow-md"
+            <div className="text-center mb-6">
+              <Button
+                onClick={simulateProcessing}
+                disabled={isProcessing}
+                size="lg"
+                className="px-8 py-3 text-lg font-semibold bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 shadow-lg text-white"
               >
                 <Brain className="w-5 h-5 mr-2" />
-                Run Agent
+                {isProcessing ? 'Processing...' : 'Run Agent'}
               </Button>
             </div>
           </>
         )}
 
-        {/* Results Table */}
         {isAuthenticated && showResults && (
-          <div className="mb-8">...</div>
-        )}
-
-        {/* Features */}
-        {isAuthenticated && (
-          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">...</div>
+          <div className="mb-8">
+            {/* Results Table here... */}
+          </div>
         )}
       </main>
 
@@ -241,4 +257,3 @@ const Index = () => {
 };
 
 export default Index;
-
