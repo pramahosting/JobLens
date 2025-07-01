@@ -203,11 +203,11 @@ const Index = () => {
 
         {isAuthenticated && (
           <>
-            <div className="grid lg:grid-cols-2 gap-8 mb-2">
-              <div className="h-[400px]">
+            <div className="grid lg:grid-cols-2 gap-8 mb-4">
+              <div className="h-[600px]">
                 <JobDescriptionInput />
               </div>
-              <div className="h-[400px]">
+              <div className="h-[600px]">
                 <ResumeFolderInput />
               </div>
             </div>
@@ -224,7 +224,15 @@ const Index = () => {
               </Button>
             </div>
 
-            <div className="mb-8">
+            {/* Default Results Table before processing */}
+            <div className="bg-white shadow rounded-lg p-4 mb-8">
+              <div className="flex justify-between items-center mb-2">
+                <h2 className="text-lg font-semibold text-gray-800">Candidate Results</h2>
+                <Button onClick={handleExcelDownload} className="bg-white border shadow-sm text-sm">
+                  <Download className="h-4 w-4 mr-2" />
+                  Download Excel
+                </Button>
+              </div>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -233,16 +241,27 @@ const Index = () => {
                     <TableHead>Phone</TableHead>
                     <TableHead>ATS Score</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Interview Status</TableHead>
+                    <TableHead>Analysis</TableHead>
+                    <TableHead>Shortlisted</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {results.map(candidate => (
+                  {results.map((candidate) => (
                     <TableRow key={candidate.id}>
                       <TableCell>{candidate.name}</TableCell>
                       <TableCell>{candidate.email}</TableCell>
                       <TableCell>{candidate.phone}</TableCell>
                       <TableCell>{candidate.atsScore}%</TableCell>
                       <TableCell>{candidate.status}</TableCell>
+                      <TableCell>{candidate.videoInterviewStatus}</TableCell>
+                      <TableCell>{candidate.videoAnalysis}</TableCell>
+                      <TableCell>
+                        <Checkbox 
+                          checked={candidate.shortlisted}
+                          onCheckedChange={(checked) => handleShortlist(candidate.id, checked as boolean)}
+                        />
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
