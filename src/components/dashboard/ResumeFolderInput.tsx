@@ -4,8 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { FolderOpen, Undo2, Users, CheckCircle, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { FolderOpen, Link2, Users, CheckCircle, Undo2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const ResumeFolderInput = () => {
@@ -14,6 +14,7 @@ const ResumeFolderInput = () => {
   const [progress, setProgress] = useState(0);
   const [results, setResults] = useState<any[]>([]);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [activeTab, setActiveTab] = useState('folder');
   const { toast } = useToast();
 
   const handleFolderSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -21,7 +22,7 @@ const ResumeFolderInput = () => {
     if (files && files.length > 0) {
       setFolderPath(`${files.length} files selected`);
       toast({
-        title: "Folder selected",
+        title: 'Folder selected',
         description: `Found ${files.length} resume files`,
       });
     }
@@ -30,9 +31,9 @@ const ResumeFolderInput = () => {
   const handleReset = () => {
     setFolderPath('');
     setCloudLink('');
-    setProgress(0);
-    setResults([]);
     setIsCompleted(false);
+    setResults([]);
+    setProgress(0);
   };
 
   const getStatusColor = (status: string) => {
@@ -57,9 +58,9 @@ const ResumeFolderInput = () => {
             <FolderOpen className="h-4 w-4 text-white" />
           </div>
           <div>
-            <CardTitle className="text-xl">Resume Input</CardTitle>
+            <CardTitle className="text-xl">Resume Folder Input</CardTitle>
             <CardDescription>
-              Upload resumes via folder or provide cloud folder link
+              Upload a folder or paste a cloud storage link to resumes
             </CardDescription>
           </div>
         </div>
@@ -72,7 +73,7 @@ const ResumeFolderInput = () => {
       </CardHeader>
 
       <CardContent className="space-y-4 flex-grow overflow-auto">
-        <Tabs defaultValue="folder" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-4">
             <TabsTrigger value="folder">Folder Upload</TabsTrigger>
             <TabsTrigger value="cloud">Cloud Folder Link</TabsTrigger>
@@ -87,26 +88,28 @@ const ResumeFolderInput = () => {
                 <p className="text-sm text-gray-600 mb-4">
                   Upload a folder containing resume files (.pdf, .docx)
                 </p>
-                <div className="relative inline-block">
-                  <label htmlFor="folder-input">
-                    <Button variant="outline" className="text-sm">
-                      📁 Choose Folder
-                    </Button>
-                  </label>
-                  <Input
-                    id="folder-input"
-                    type="file"
-                    multiple
-                    accept=".pdf,.docx"
-                    webkitdirectory="true"
-                    directory=""
-                    onChange={handleFolderSelect}
-                    className="absolute left-0 top-0 opacity-0 w-full h-full cursor-pointer"
-                  />
+                <div className="flex items-center justify-center space-x-3">
+                  <div className="relative inline-block">
+                    <label htmlFor="folder-input">
+                      <Button variant="outline" className="text-sm">
+                        📁 Choose Folder
+                      </Button>
+                    </label>
+                    <Input
+                      id="folder-input"
+                      type="file"
+                      multiple
+                      accept=".pdf,.docx"
+                      webkitdirectory="true"
+                      directory=""
+                      onChange={handleFolderSelect}
+                      className="absolute left-0 top-0 opacity-0 w-full h-full cursor-pointer"
+                    />
+                  </div>
+                  <span className="text-sm text-gray-700">
+                    {folderPath || 'No folder chosen'}
+                  </span>
                 </div>
-                <p className="text-sm text-gray-700 mt-2">
-                  {folderPath || 'No folder chosen'}
-                </p>
               </div>
             </div>
           </TabsContent>
@@ -114,13 +117,13 @@ const ResumeFolderInput = () => {
           {/* Cloud Folder Link Tab */}
           <TabsContent value="cloud">
             <div className="space-y-2">
-              <Label htmlFor="cloud-link">Cloud Folder URL</Label>
+              <Label htmlFor="cloud-link">Paste Cloud Folder Link</Label>
               <div className="relative">
                 <Link2 className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
                   id="cloud-link"
                   type="url"
-                  placeholder="https://drive.google.com/your-resume-folder"
+                  placeholder="https://drive.google.com/..."
                   value={cloudLink}
                   onChange={(e) => setCloudLink(e.target.value)}
                   className="pl-10"
@@ -173,9 +176,9 @@ const ResumeFolderInput = () => {
                     <div>
                       <p className="font-medium text-green-700 mb-1">Strengths:</p>
                       <div className="flex flex-wrap gap-1">
-                        {candidate.strengths.map((s: string, i: number) => (
+                        {candidate.strengths.map((strength: string, i: number) => (
                           <span key={i} className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
-                            {s}
+                            {strength}
                           </span>
                         ))}
                       </div>
@@ -183,9 +186,9 @@ const ResumeFolderInput = () => {
                     <div>
                       <p className="font-medium text-orange-700 mb-1">Gaps:</p>
                       <div className="flex flex-wrap gap-1">
-                        {candidate.gaps.map((g: string, i: number) => (
+                        {candidate.gaps.map((gap: string, i: number) => (
                           <span key={i} className="bg-orange-100 text-orange-800 px-2 py-1 rounded text-xs">
-                            {g}
+                            {gap}
                           </span>
                         ))}
                       </div>
@@ -197,7 +200,6 @@ const ResumeFolderInput = () => {
           </div>
         )}
 
-        {/* Reset button aligned to bottom right */}
         <div className="flex justify-end mt-4">
           <Button
             variant="ghost"
