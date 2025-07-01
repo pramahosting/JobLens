@@ -6,14 +6,14 @@ import { Checkbox } from '@/components/ui/checkbox';
 import AuthModal from '@/components/auth/AuthModal';
 import JobDescriptionInput from '@/components/dashboard/JobDescriptionInput';
 import ResumeFolderInput from '@/components/dashboard/ResumeFolderInput';
-import { Users, Video, Mail, Download, Brain } from 'lucide-react';
+import { Users, Video, Mail, Download, CheckCircle, Clock, Send, Brain } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
-  const [showResults, setShowResults] = useState(false);
+  const [showResults, setShowResults] = useState(true); // Always show sample results by default
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
@@ -34,7 +34,7 @@ const Index = () => {
     },
     {
       id: 2,
-      name: "Sarah Johnson",
+      name: "Sarah Johnson", 
       email: "sarah.j@email.com",
       phone: "+1-555-0124",
       atsScore: 88,
@@ -49,7 +49,7 @@ const Index = () => {
     {
       id: 3,
       name: "Mike Davis",
-      email: "mike.davis@email.com",
+      email: "mike.davis@email.com", 
       phone: "+1-555-0125",
       atsScore: 65,
       status: "Review",
@@ -100,9 +100,9 @@ const Index = () => {
   };
 
   const handleExcelDownload = () => {
-    const csvContent = "data:text/csv;charset=utf-8," +
-      "Name,Email,Phone,ATS Score,Status,Video Status,Analysis,Shortlisted\n" +
-      results.map(r => `${r.name},${r.email},${r.phone},${r.atsScore}%,${r.status},${r.videoInterviewStatus},${r.videoAnalysis},${r.shortlisted ? 'Yes' : 'No'}`).join("\n");
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + "Name,Email,Phone,ATS Score,Status,Video Status,Analysis,Shortlisted\n"
+      + results.map(r => `${r.name},${r.email},${r.phone},${r.atsScore}%,${r.status},${r.videoInterviewStatus},${r.videoAnalysis},${r.shortlisted ? 'Yes' : 'No'}`).join("\n");
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -129,6 +129,15 @@ const Index = () => {
     }));
   };
 
+  const sendInterviewEmail = (candidate: any) => {
+    if (candidate.atsScore >= 20) {
+      toast({
+        title: "Interview Email Sent",
+        description: `Video interview invitation sent to ${candidate.name}`,
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-40">
@@ -146,6 +155,7 @@ const Index = () => {
               </p>
             </div>
           </div>
+
           {!isAuthenticated && (
             <div className="space-x-2">
               <Button variant="ghost" onClick={handleLogin}>Login</Button>
@@ -154,13 +164,19 @@ const Index = () => {
               </Button>
             </div>
           )}
+
           {isAuthenticated && (
-            <Button variant="outline" onClick={() => setIsAuthenticated(false)} className="border-purple-200 hover:bg-purple-50">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsAuthenticated(false)}
+              className="border-purple-200 hover:bg-purple-50"
+            >
               Logout
             </Button>
           )}
         </div>
       </header>
+
       <main className="container mx-auto px-4 py-6 relative">
         {!isAuthenticated && (
           <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-30 flex items-center justify-center">
@@ -184,9 +200,10 @@ const Index = () => {
             </Card>
           </div>
         )}
+
         {isAuthenticated && (
           <>
-            <div className="grid lg:grid-cols-2 gap-8 mb-8">
+            <div className="grid lg:grid-cols-2 gap-8 mb-4">
               <div className="h-[400px]">
                 <JobDescriptionInput />
               </div>
@@ -194,59 +211,71 @@ const Index = () => {
                 <ResumeFolderInput />
               </div>
             </div>
+
             <div className="text-center mb-10">
-              <Button onClick={simulateProcessing} disabled={isProcessing} size="lg" className="px-8 py-3 text-lg font-semibold bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 shadow-lg text-white">
+              <Button
+                onClick={simulateProcessing}
+                disabled={isProcessing}
+                size="lg"
+                className="px-8 py-3 text-lg font-semibold bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 shadow-lg text-white"
+              >
                 <Brain className="w-5 h-5 mr-2" />
                 {isProcessing ? 'Processing...' : 'Run Agent'}
               </Button>
             </div>
-            <div className="mb-10">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold text-gray-700">Sample Results</h2>
-                <Button onClick={handleExcelDownload} className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-100">
-                  <Download className="w-4 h-4 mr-2" />Download CSV
-                </Button>
-              </div>
-              <div className="overflow-x-auto">
+
+            {showResults && (
+              <div className="mb-8">
+                <div className="flex justify-between items-center mb-2">
+                  <h2 className="text-xl font-semibold text-purple-700">Sample Candidate Results</h2>
+                  <Button onClick={handleExcelDownload} className="bg-white border text-blue-600 border-blue-400 hover:bg-blue-50">
+                    <Download className="w-4 h-4 mr-2" /> Download CSV
+                  </Button>
+                </div>
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Shortlist</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Phone</TableHead>
-                      <TableHead>ATS Score</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Video Status</TableHead>
-                      <TableHead>Analysis</TableHead>
+                    <TableRow className="bg-purple-100">
+                      <TableHead className="text-purple-900">Shortlist</TableHead>
+                      <TableHead className="text-purple-900">Name</TableHead>
+                      <TableHead className="text-purple-900">Email</TableHead>
+                      <TableHead className="text-purple-900">Phone</TableHead>
+                      <TableHead className="text-purple-900">ATS Score</TableHead>
+                      <TableHead className="text-purple-900">Status</TableHead>
+                      <TableHead className="text-purple-900">Video Interview</TableHead>
+                      <TableHead className="text-purple-900">Analysis</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {results.map(candidate => (
-                      <TableRow key={candidate.id}>
+                    {results.map((r) => (
+                      <TableRow key={r.id} className="bg-white even:bg-slate-50">
                         <TableCell>
-                          <Checkbox checked={candidate.shortlisted} onCheckedChange={(checked) => handleShortlist(candidate.id, !!checked)} />
+                          <Checkbox checked={r.shortlisted} onCheckedChange={(checked: boolean) => handleShortlist(r.id, checked)} />
                         </TableCell>
-                        <TableCell>{candidate.name}</TableCell>
-                        <TableCell>{candidate.email}</TableCell>
-                        <TableCell>{candidate.phone}</TableCell>
-                        <TableCell>{candidate.atsScore}%</TableCell>
-                        <TableCell>{candidate.status}</TableCell>
-                        <TableCell>{candidate.videoInterviewStatus}</TableCell>
-                        <TableCell>{candidate.videoAnalysis}</TableCell>
+                        <TableCell>{r.name}</TableCell>
+                        <TableCell>{r.email}</TableCell>
+                        <TableCell>{r.phone}</TableCell>
+                        <TableCell className="text-center font-semibold text-blue-600">{r.atsScore}%</TableCell>
+                        <TableCell>{r.status}</TableCell>
+                        <TableCell>{r.videoInterviewStatus}</TableCell>
+                        <TableCell>{r.videoAnalysis}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
               </div>
-            </div>
+            )}
           </>
         )}
       </main>
-      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} mode={authMode} onSuccess={handleAuthSuccess} />
+
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        mode={authMode}
+        onSuccess={handleAuthSuccess}
+      />
     </div>
   );
 };
 
 export default Index;
-
