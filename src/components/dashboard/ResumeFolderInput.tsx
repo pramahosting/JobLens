@@ -101,6 +101,8 @@ const ResumeFolderInput = () => {
                 type="file"
                 multiple
                 accept=".pdf,.docx"
+                webkitdirectory="true"
+                directory=""
                 onChange={handleFolderSelect}
                 className="max-w-xs mx-auto"
               />
