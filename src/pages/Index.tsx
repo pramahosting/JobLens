@@ -13,7 +13,7 @@ const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
-  const [showResults, setShowResults] = useState(true);
+  const [showResults, setShowResults] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
@@ -138,19 +138,6 @@ const Index = () => {
     }
   };
 
-  const features = [
-    {
-      icon: <Video className="h-8 w-8 text-green-600" />,
-      title: "AI Video Interviews",
-      description: "Automated video interviews with AI avatars"
-    },
-    {
-      icon: <Mail className="h-8 w-8 text-orange-600" />,
-      title: "Smart Communication",
-      description: "Automated candidate communication and follow-ups"
-    }
-  ];
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-40">
@@ -217,15 +204,15 @@ const Index = () => {
         {isAuthenticated && (
           <>
             <div className="grid lg:grid-cols-2 gap-8 mb-2">
-              <div className="h-[600px]">
+              <div className="h-[400px]">
                 <JobDescriptionInput />
               </div>
-              <div className="h-[600px]">
+              <div className="h-[400px]">
                 <ResumeFolderInput />
               </div>
             </div>
 
-            <div className="text-center mb-6 -mt-2">
+            <div className="text-center mb-6 mt-10">
               <Button
                 onClick={simulateProcessing}
                 disabled={isProcessing}
@@ -236,13 +223,32 @@ const Index = () => {
                 {isProcessing ? 'Processing...' : 'Run Agent'}
               </Button>
             </div>
-          </>
-        )}
 
-        {isAuthenticated && showResults && (
-          <div className="mb-8">
-            {/* Results Table here... */}
-          </div>
+            <div className="mb-8">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead>ATS Score</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {results.map(candidate => (
+                    <TableRow key={candidate.id}>
+                      <TableCell>{candidate.name}</TableCell>
+                      <TableCell>{candidate.email}</TableCell>
+                      <TableCell>{candidate.phone}</TableCell>
+                      <TableCell>{candidate.atsScore}%</TableCell>
+                      <TableCell>{candidate.status}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </>
         )}
       </main>
 
