@@ -6,8 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileText, Upload, Link2, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Undo2 } from 'lucide-react';
 
-const handleReset = () => { setJobDescription('');};
 const JobDescriptionInput = () => {
   const [jobDescription, setJobDescription] = useState('');
   const [fileUrl, setFileUrl] = useState('');
@@ -15,7 +16,7 @@ const JobDescriptionInput = () => {
   const [isProcessed, setIsProcessed] = useState(false);
   const [activeTab, setActiveTab] = useState('text');
   const { toast } = useToast();
-  
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -130,32 +131,32 @@ const JobDescriptionInput = () => {
           </TabsContent>
         </Tabs>
 
-{isProcessed && (
-  <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg mt-4">
-    <h4 className="font-semibold text-gray-800 mb-2">Extracted Information:</h4>
-    <div className="space-y-2 text-sm">
-      <div><strong>Job Title:</strong> Senior Software Engineer</div>
-      <div><strong>Key Skills:</strong> React, Node.js, TypeScript, AWS</div>
-      <div><strong>Experience:</strong> 5+ years</div>
-      <div><strong>Education:</strong> Bachelor's in Computer Science</div>
-    </div>
-  </div>
-)}
+        {isProcessed && (
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg mt-4">
+            <h4 className="font-semibold text-gray-800 mb-2">Extracted Information:</h4>
+            <div className="space-y-2 text-sm">
+              <div><strong>Job Title:</strong> Senior Software Engineer</div>
+              <div><strong>Key Skills:</strong> React, Node.js, TypeScript, AWS</div>
+              <div><strong>Experience:</strong> 5+ years</div>
+              <div><strong>Education:</strong> Bachelor's in Computer Science</div>
+            </div>
+          </div>
+        )}
 
-<div className="flex justify-end mt-6">
-  <Button
-    variant="ghost"
-    onClick={handleReset}
-    className="text-red-500 hover:text-red-700"
-  >
-    <Undo2 className="w-4 h-4 mr-1" />
-    Reset
-  </Button>
-</div>
+        {/* RESET BUTTON - Added here */}
+        <div className="flex justify-end mt-6">
+          <Button
+            variant="ghost"
+            onClick={handleReset}
+            className="text-red-500 hover:text-red-700 flex items-center space-x-1"
+          >
+            <Undo2 className="w-4 h-4" />
+            <span>Reset</span>
+          </Button>
+        </div>
 
-</CardContent>
-</Card>
-
+      </CardContent>
+    </Card>
   );
 };
 
