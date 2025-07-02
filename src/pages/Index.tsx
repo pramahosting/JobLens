@@ -227,7 +227,7 @@ const Index = () => {
               </div>
             </div>
 
-            <div className="text-center mb-10">
+            <div className="text-center mb-4">
               <Button
                 onClick={simulateProcessing}
                 disabled={isProcessing}
