@@ -15,6 +15,7 @@ const Index = () => {
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [showResults, setShowResults] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [recruiterEmail, setRecruiterEmail] = useState('');
   const { toast } = useToast();
 
   const [results, setResults] = useState([
@@ -86,8 +87,9 @@ const Index = () => {
     setShowAuthModal(true);
   };
 
-  const handleAuthSuccess = () => {
+  const handleAuthSuccess = (user: { email: string }) => {
     setIsAuthenticated(true);
+    setRecruiterEmail(user.email);
     setShowAuthModal(false);
   };
 
@@ -101,9 +103,9 @@ const Index = () => {
 
   const handleExcelDownload = () => {
     const csvContent = "data:text/csv;charset=utf-8," 
-      + "Name,Email,Phone,ATS Score,Key Strength,Gap in Skills,Status,Video Status,Video Analysis,Shortlisted\n"
+      + "Name,Email,Phone,ATS Score,Key Strength,Considerations,Status,Video Status,Video Analysis,Shortlisted,Recruiter Email\n"
       + results.map(r => 
-        `${r.name},${r.email},${r.phone},${r.atsScore}%,Relevant Experience,Cloud, ML Ops,${r.status},${r.videoInterviewStatus},${r.videoAnalysis},${r.shortlisted ? 'Yes' : 'No'}`
+        `${r.name},${r.email},${r.phone},${r.atsScore}%,Relevant Experience,Cloud, ML Ops,${r.status},${r.videoInterviewStatus},${r.videoAnalysis},${r.shortlisted ? 'Yes' : 'No'},${recruiterEmail}`
       ).join("\n");
 
     const encodedUri = encodeURI(csvContent);
@@ -135,7 +137,7 @@ const Index = () => {
     if (candidate.atsScore >= 20) {
       toast({
         title: "Interview Email Sent",
-        description: `Video interview invitation sent to ${candidate.name}`,
+        description: `Video interview invitation sent to ${candidate.name} from ${recruiterEmail}`,
       });
     }
   };
@@ -227,7 +229,7 @@ const Index = () => {
               </div>
             </div>
 
-            <div className="text-center mb-4">
+            <div className="text-center mb-6">
               <Button
                 onClick={simulateProcessing}
                 disabled={isProcessing}
@@ -262,7 +264,7 @@ const Index = () => {
                     <TableHead>Phone</TableHead>
                     <TableHead>ATS Score</TableHead>
                     <TableHead>Key Strength</TableHead>
-                    <TableHead>Gap in Skills</TableHead>
+                    <TableHead>Considerations</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Video Status</TableHead>
                     <TableHead>Video Analysis</TableHead>
@@ -329,4 +331,5 @@ const Index = () => {
 };
 
 export default Index;
+
 
