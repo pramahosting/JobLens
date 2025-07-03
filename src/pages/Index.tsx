@@ -13,9 +13,9 @@ const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const [recruiterEmail, setRecruiterEmail] = useState('');
   const [showResults, setShowResults] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [recruiterEmail, setRecruiterEmail] = useState('');
   const { toast } = useToast();
 
   const [results, setResults] = useState([
@@ -29,13 +29,11 @@ const Index = () => {
       videoInterviewStatus: "Completed",
       videoAnalysis: "Confident, Clear Communication",
       interviewEmailSent: true,
-      shortlisted: false,
-      staffName: "",
-      staffEmail: ""
+      shortlisted: false
     },
     {
       id: 2,
-      name: "Sarah Johnson", 
+      name: "Sarah Johnson",
       email: "sarah.j@email.com",
       phone: "+1-555-0124",
       atsScore: 88,
@@ -43,23 +41,19 @@ const Index = () => {
       videoInterviewStatus: "Pending",
       videoAnalysis: "Awaiting Interview",
       interviewEmailSent: true,
-      shortlisted: false,
-      staffName: "",
-      staffEmail: ""
+      shortlisted: false
     },
     {
       id: 3,
       name: "Mike Davis",
-      email: "mike.davis@email.com", 
+      email: "mike.davis@email.com",
       phone: "+1-555-0125",
       atsScore: 65,
       status: "Review",
       videoInterviewStatus: "Scheduled",
       videoAnalysis: "Interview Scheduled",
       interviewEmailSent: true,
-      shortlisted: false,
-      staffName: "",
-      staffEmail: ""
+      shortlisted: false
     },
     {
       id: 4,
@@ -71,9 +65,7 @@ const Index = () => {
       videoInterviewStatus: "Not Invited",
       videoAnalysis: "Below Threshold",
       interviewEmailSent: false,
-      shortlisted: false,
-      staffName: "",
-      staffEmail: ""
+      shortlisted: false
     }
   ]);
 
@@ -87,10 +79,12 @@ const Index = () => {
     setShowAuthModal(true);
   };
 
-  const handleAuthSuccess = (user: { email: string }) => {
+  const handleAuthSuccess = (email?: string) => {
     setIsAuthenticated(true);
-    setRecruiterEmail(user.email);
     setShowAuthModal(false);
+    if (email) {
+      setRecruiterEmail(email);
+    }
   };
 
   const simulateProcessing = () => {
@@ -102,10 +96,10 @@ const Index = () => {
   };
 
   const handleExcelDownload = () => {
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + "Name,Email,Phone,ATS Score,Key Strength,Considerations,Status,Video Status,Video Analysis,Shortlisted,Recruiter Email\n"
-      + results.map(r => 
-        `${r.name},${r.email},${r.phone},${r.atsScore}%,Relevant Experience,Cloud, ML Ops,${r.status},${r.videoInterviewStatus},${r.videoAnalysis},${r.shortlisted ? 'Yes' : 'No'},${recruiterEmail}`
+    const csvContent = "data:text/csv;charset=utf-8," +
+      "Name,Email,Phone,ATS Score,Key Strength,Considerations,Status,Video Status,Video Analysis,Shortlisted\n" +
+      results.map(r =>
+        `${r.name},${r.email},${r.phone},${r.atsScore}%,Relevant Experience,Cloud, ML Ops,${r.status},${r.videoInterviewStatus},${r.videoAnalysis},${r.shortlisted ? 'Yes' : 'No'}`
       ).join("\n");
 
     const encodedUri = encodeURI(csvContent);
@@ -124,7 +118,7 @@ const Index = () => {
         if (checked) {
           toast({
             title: "Candidate Shortlisted",
-            description: `${candidate.name} has been shortlisted. Staff will be notified to schedule next round.`,
+            description: `${candidate.name} has been shortlisted. Follow-up email will be sent from ${recruiterEmail}`,
           });
         }
         return updated;
@@ -141,19 +135,6 @@ const Index = () => {
       });
     }
   };
-
-  const features = [
-    {
-      icon: <Video className="h-8 w-8 text-green-600" />,
-      title: "AI Video Interviews",
-      description: "Automated video interviews with AI avatars"
-    },
-    {
-      icon: <Mail className="h-8 w-8 text-orange-600" />,
-      title: "Smart Communication",
-      description: "Automated candidate communication and follow-ups"
-    }
-  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
@@ -331,5 +312,3 @@ const Index = () => {
 };
 
 export default Index;
-
-
