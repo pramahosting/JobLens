@@ -1,30 +1,14 @@
 import React, { useState } from 'react';
-import {
-  Card, CardContent, CardDescription, CardHeader, CardTitle
-} from '@/components/ui/card';
-import {
-  Textarea
-} from '@/components/ui/textarea';
-import {
-  Input
-} from '@/components/ui/input';
-import {
-  Label
-} from '@/components/ui/label';
-import {
-  Tabs, TabsContent, TabsList, TabsTrigger
-} from '@/components/ui/tabs';
-import {
-  FileText, Upload, Link2, CheckCircle, Undo2
-} from 'lucide-react';
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
+import {Textarea} from '@/components/ui/textarea';
+import {Input} from '@/components/ui/input';
+import {Label} from '@/components/ui/label';
+import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs';
+import {FileText, Upload, Link2, CheckCircle, Undo2} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import OpenAI from 'openai';
-
-const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true,
-});
+const openaiKey = import.meta.env.VITE_OPENAI_API_KEY;
 
 const JobDescriptionInput = () => {
   const [jobDescription, setJobDescription] = useState('');
