@@ -23,6 +23,7 @@ export default defineConfig(({ mode }) => ({
       buffer: 'buffer',
       "@": path.resolve(__dirname, "./src"),
     },
+    mainFields: ['browser', 'module', 'main'],  // Prioritize browser field
   },
   optimizeDeps: {
     esbuildOptions: {
@@ -30,9 +31,9 @@ export default defineConfig(({ mode }) => ({
         global: 'globalThis',
       },
       plugins: [
-        NodeGlobalsPolyfillPlugin({ buffer: true }),
+        NodeGlobalsPolyfillPlugin({ buffer: true, process: true }),
         NodeModulesPolyfillPlugin()
-      ]
+      ].filter(Boolean)
     }
   }
 }));
