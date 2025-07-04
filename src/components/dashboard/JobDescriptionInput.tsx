@@ -1,26 +1,34 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card, CardContent, CardDescription, CardHeader, CardTitle
+} from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, Upload, Link2, CheckCircle, Undo2, Download } from 'lucide-react';
+import {
+  Tabs, TabsContent, TabsList, TabsTrigger
+} from '@/components/ui/tabs';
+import {
+  FileText, Upload, Link2, CheckCircle, Undo2
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import * as XLSX from 'xlsx';
 
 const JobDescriptionInput = () => {
   const [jobDescription, setJobDescription] = useState('');
   const [fileUrl, setFileUrl] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isProcessed, setIsProcessed] = useState(true); // set to true for testing
+  const [isProcessed, setIsProcessed] = useState(true); // Change to true for testing
   const [activeTab, setActiveTab] = useState('text');
   const { toast } = useToast();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+      const allowedTypes = [
+        'application/pdf',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      ];
       if (allowedTypes.includes(file.type)) {
         setSelectedFile(file);
         toast({
@@ -44,24 +52,6 @@ const JobDescriptionInput = () => {
     setIsProcessed(false);
   };
 
-  const handleDownloadExcel = () => {
-    const extractedData = [
-      {
-        'Job Title': 'Senior Software Engineer',
-        'Key Skills': 'React, Node.js, TypeScript, AWS',
-        'Experience': '5+ years',
-        'Education': "Bachelor's in Computer Science",
-      },
-    ];
-
-    const worksheet = XLSX.utils.json_to_sheet(extractedData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Extracted Info');
-
-    const fileName = selectedFile?.name?.replace(/\.[^/.]+$/, '') || 'JobDescription';
-    XLSX.writeFile(workbook, `${fileName}_Extracted.xlsx`);
-  };
-
   return (
     <Card className="h-full border-0 shadow-lg bg-white/80 backdrop-blur-sm flex flex-col">
       <CardHeader>
@@ -79,7 +69,9 @@ const JobDescriptionInput = () => {
         {isProcessed && (
           <div className="flex items-center space-x-2 text-green-600 bg-green-50 p-2 rounded-lg mt-2">
             <CheckCircle className="h-4 w-4" />
-            <span className="text-sm font-medium">Job description processed successfully</span>
+            <span className="text-sm font-medium">
+              Job description processed successfully
+            </span>
           </div>
         )}
       </CardHeader>
@@ -152,19 +144,13 @@ const JobDescriptionInput = () => {
         {isProcessed && (
           <div className="space-y-4 mt-4">
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg">
-              <h4 className="font-semibold text-gray-800 mb-2">Extracted Information</h4>
-              <div className="space-y-1 text-sm">
+              <h4 className="font-semibold text-gray-800 mb-2">Extracted Job Description</h4>
+              <div className="space-y-1 text-sm text-gray-700">
                 <div><strong>Job Title:</strong> Senior Software Engineer</div>
                 <div><strong>Key Skills:</strong> React, Node.js, TypeScript, AWS</div>
                 <div><strong>Experience:</strong> 5+ years</div>
                 <div><strong>Education:</strong> Bachelor's in Computer Science</div>
               </div>
-            </div>
-            <div className="flex justify-end">
-              <Button onClick={handleDownloadExcel} className="bg-blue-600 hover:bg-blue-700 text-white font-medium">
-                <Download className="w-4 h-4 mr-2" />
-                Download Excel
-              </Button>
             </div>
           </div>
         )}
