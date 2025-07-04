@@ -8,11 +8,12 @@ import { FileText, Upload, Link2, CheckCircle, Undo2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 
-// Get Hugging Face API key from environment variable
-const HF_API_KEY = import.meta.env.VITE_HF_API_KEY;
+import mammoth from 'mammoth';
+import * as pdfjsLib from 'pdfjs-dist';
 
-// Hugging Face GPT-2 model inference endpoint (can replace with another model)
-const HF_API_URL = "https://api-inference.huggingface.co/models/gpt2";
+// Hugging Face settings
+const HF_API_KEY = import.meta.env.VITE_HF_API_KEY;
+const HF_API_URL = "https://api-inference.huggingface.co/models/mrm8488/t5-base-finetuned-question-generation-ap";
 
 const JobDescriptionInput = () => {
   const [jobDescription, setJobDescription] = useState('');
@@ -24,20 +25,58 @@ const JobDescriptionInput = () => {
   const [activeTab, setActiveTab] = useState('text');
   const { toast } = useToast();
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-      if (allowedTypes.includes(file.type)) {
-        setSelectedFile(file);
-        toast({ title: 'File selected', description: `Selected: ${file.name}` });
-      } else {
-        toast({
-          title: 'Invalid file type',
-          description: 'Please select a PDF or DOCX file',
-          variant: 'destructive',
-        });
+    if (!file) return;
+
+    const allowedTypes = [
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: 'Invalid file type',
+        description: 'Please select a PDF or DOCX file',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setSelectedFile(file);
+    toast({ title: 'File selected', description: `Selected: ${file.name}` });
+
+    // Parse file
+    try {
+      if (file.type === 'application/pdf') {
+        const reader = new FileReader();
+        reader.onload = async () => {
+          const typedArray = new Uint8Array(reader.result as ArrayBuffer);
+          const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
+          let text = '';
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            const pageText = content.items.map((item: any) => item.str).join(' ');
+            text += pageText + '\n';
+          }
+          setJobDescription(text.trim());
+        };
+        reader.readAsArrayBuffer(file);
+      } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        const reader = new FileReader();
+        reader.onload = async () => {
+          const result = await mammoth.extractRawText({ arrayBuffer: reader.result as ArrayBuffer });
+          setJobDescription(result.value.trim());
+        };
+        reader.readAsArrayBuffer(file);
       }
+    } catch (err: any) {
+      toast({
+        title: 'Error parsing file',
+        description: err.message || 'Unsupported file format',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -51,49 +90,66 @@ const JobDescriptionInput = () => {
   };
 
   const handleProcessDescription = async () => {
-    if (!jobDescription.trim()) {
-      toast({ title: 'Input required', description: 'Please enter a job description', variant: 'destructive' });
-      return;
-    }
     setErrorMessage(null);
     setIsProcessed(false);
     setExtractedInfo(null);
 
+    if (
+      (activeTab === 'text' && !jobDescription.trim()) ||
+      (activeTab === 'file' && !selectedFile) ||
+      (activeTab === 'url' && !fileUrl.trim())
+    ) {
+      toast({
+        title: 'Input required',
+        description: 'Please enter or upload a job description',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (activeTab === 'file' || activeTab === 'url') {
+      if (!jobDescription) {
+        toast({
+          title: 'File still processing',
+          description: 'Please wait for text to be extracted from file/URL',
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
+
     try {
       const response = await fetch(HF_API_URL, {
-        method: "POST",
+        method: 'POST',
         headers: {
           Authorization: `Bearer ${HF_API_KEY}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          inputs: `Extract Job Title, Key Skills, Experience, and Education from the following JD:\n\n${jobDescription}`,
+          inputs: `Extract Job Title, Key Skills, Experience, and Education from this:\n\n${jobDescription}`,
           parameters: { max_length: 512, temperature: 0.3 },
         }),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Failed to fetch from Hugging Face API");
+        throw new Error(error.error || 'Failed to fetch from Hugging Face API');
       }
 
       const data = await response.json();
+      const text = Array.isArray(data) ? data[0]?.generated_text : data?.generated_text;
 
-      // The output structure depends on the model, GPT2 returns generated text in data[0].generated_text
-      if (Array.isArray(data) && data[0]?.generated_text) {
-        setExtractedInfo(data[0].generated_text);
-        setIsProcessed(true);
-      } else if (typeof data.generated_text === 'string') {
-        setExtractedInfo(data.generated_text);
+      if (text) {
+        setExtractedInfo(text);
         setIsProcessed(true);
       } else {
-        throw new Error("Unexpected response format from Hugging Face API");
+        throw new Error('No response content');
       }
     } catch (err: any) {
-      setErrorMessage(err.message || 'Unknown error occurred');
+      setErrorMessage(err.message);
       toast({
         title: 'Failed to process JD',
-        description: err.message || 'API call failed',
+        description: err.message,
         variant: 'destructive',
       });
     }
@@ -220,5 +276,3 @@ const JobDescriptionInput = () => {
 };
 
 export default JobDescriptionInput;
-
-
