@@ -1,3 +1,5 @@
+// JobDescriptionInput.tsx - updated to use OpenRouter API instead of OpenAI
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -8,12 +10,8 @@ import { FileText, Upload, Link2, CheckCircle, Undo2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 
-import mammoth from 'mammoth';
-import * as pdfjsLib from 'pdfjs-dist';
-
-// Hugging Face settings
-const HF_API_KEY = import.meta.env.VITE_HF_API_KEY;
-const HF_API_URL = "https://api-inference.huggingface.co/models/mrm8488/t5-base-finetuned-question-generation-ap";
+const openrouterKey = import.meta.env.VITE_OPENROUTER_API_KEY;
+const API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 const JobDescriptionInput = () => {
   const [jobDescription, setJobDescription] = useState('');
@@ -25,58 +23,20 @@ const JobDescriptionInput = () => {
   const [activeTab, setActiveTab] = useState('text');
   const { toast } = useToast();
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-
-    const allowedTypes = [
-      'application/pdf',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    ];
-
-    if (!allowedTypes.includes(file.type)) {
-      toast({
-        title: 'Invalid file type',
-        description: 'Please select a PDF or DOCX file',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setSelectedFile(file);
-    toast({ title: 'File selected', description: `Selected: ${file.name}` });
-
-    // Parse file
-    try {
-      if (file.type === 'application/pdf') {
-        const reader = new FileReader();
-        reader.onload = async () => {
-          const typedArray = new Uint8Array(reader.result as ArrayBuffer);
-          const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
-          let text = '';
-          for (let i = 1; i <= pdf.numPages; i++) {
-            const page = await pdf.getPage(i);
-            const content = await page.getTextContent();
-            const pageText = content.items.map((item: any) => item.str).join(' ');
-            text += pageText + '\n';
-          }
-          setJobDescription(text.trim());
-        };
-        reader.readAsArrayBuffer(file);
-      } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-        const reader = new FileReader();
-        reader.onload = async () => {
-          const result = await mammoth.extractRawText({ arrayBuffer: reader.result as ArrayBuffer });
-          setJobDescription(result.value.trim());
-        };
-        reader.readAsArrayBuffer(file);
+    if (file) {
+      const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+      if (allowedTypes.includes(file.type)) {
+        setSelectedFile(file);
+        toast({ title: 'File selected', description: `Selected: ${file.name}` });
+      } else {
+        toast({
+          title: 'Invalid file type',
+          description: 'Please select a PDF or DOCX file',
+          variant: 'destructive',
+        });
       }
-    } catch (err: any) {
-      toast({
-        title: 'Error parsing file',
-        description: err.message || 'Unsupported file format',
-        variant: 'destructive',
-      });
     }
   };
 
@@ -90,66 +50,44 @@ const JobDescriptionInput = () => {
   };
 
   const handleProcessDescription = async () => {
-    setErrorMessage(null);
-    setIsProcessed(false);
-    setExtractedInfo(null);
-
-    if (
-      (activeTab === 'text' && !jobDescription.trim()) ||
-      (activeTab === 'file' && !selectedFile) ||
-      (activeTab === 'url' && !fileUrl.trim())
-    ) {
-      toast({
-        title: 'Input required',
-        description: 'Please enter or upload a job description',
-        variant: 'destructive',
-      });
+    if (!jobDescription.trim()) {
+      setErrorMessage('Please enter a job description.');
       return;
     }
 
-    if (activeTab === 'file' || activeTab === 'url') {
-      if (!jobDescription) {
-        toast({
-          title: 'File still processing',
-          description: 'Please wait for text to be extracted from file/URL',
-          variant: 'destructive',
-        });
-        return;
-      }
-    }
-
     try {
-      const response = await fetch(HF_API_URL, {
+      setErrorMessage(null);
+      const res = await fetch(API_URL, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${HF_API_KEY}`,
+          Authorization: `Bearer ${openrouterKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          inputs: `Extract Job Title, Key Skills, Experience, and Education from this:\n\n${jobDescription}`,
-          parameters: { max_length: 512, temperature: 0.3 },
+          model: 'mistralai/mistral-7b-instruct:free',
+          messages: [
+            { role: 'system', content: 'You are a helpful assistant that extracts structured job information.' },
+            { role: 'user', content: `Extract Job Title, Key Skills, Experience, and Education from the following JD:\n\n${jobDescription}` }
+          ],
         }),
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to fetch from Hugging Face API');
-      }
-
-      const data = await response.json();
-      const text = Array.isArray(data) ? data[0]?.generated_text : data?.generated_text;
-
-      if (text) {
-        setExtractedInfo(text);
+      const data = await res.json();
+      const content = data?.choices?.[0]?.message?.content;
+      if (content) {
+        setExtractedInfo(content);
         setIsProcessed(true);
       } else {
-        throw new Error('No response content');
+        throw new Error('No content returned from OpenRouter.');
       }
     } catch (err: any) {
-      setErrorMessage(err.message);
+      const message = err?.message || 'Unknown error occurred';
+      setErrorMessage(message);
+      setExtractedInfo(null);
+      setIsProcessed(false);
       toast({
         title: 'Failed to process JD',
-        description: err.message,
+        description: message,
         variant: 'destructive',
       });
     }
