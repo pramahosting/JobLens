@@ -1,5 +1,3 @@
-// JobDescriptionInput.tsx - updated to use OpenRouter API instead of OpenAI
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -9,9 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileText, Upload, Link2, CheckCircle, Undo2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-
-const openrouterKey = import.meta.env.VITE_OPENROUTER_API_KEY;
-const API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+import pdfParse from 'pdf-parse';
+import mammoth from 'mammoth';
 
 const JobDescriptionInput = () => {
   const [jobDescription, setJobDescription] = useState('');
@@ -23,20 +20,44 @@ const JobDescriptionInput = () => {
   const [activeTab, setActiveTab] = useState('text');
   const { toast } = useToast();
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-      if (allowedTypes.includes(file.type)) {
-        setSelectedFile(file);
-        toast({ title: 'File selected', description: `Selected: ${file.name}` });
-      } else {
-        toast({
-          title: 'Invalid file type',
-          description: 'Please select a PDF or DOCX file',
-          variant: 'destructive',
-        });
+    if (!file) return;
+
+    const allowedTypes = [
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: 'Invalid file type',
+        description: 'Please select a PDF or DOCX file',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setSelectedFile(file);
+    toast({ title: 'File selected', description: `Selected: ${file.name}` });
+
+    try {
+      if (file.type === 'application/pdf') {
+        const buffer = await file.arrayBuffer();
+        const data = await pdfParse(buffer);
+        setJobDescription(data.text);
+      } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        const arrayBuffer = await file.arrayBuffer();
+        const { value } = await mammoth.extractRawText({ arrayBuffer });
+        setJobDescription(value);
       }
+    } catch (error: any) {
+      console.error('Error reading file:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to read file content.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -57,28 +78,32 @@ const JobDescriptionInput = () => {
 
     try {
       setErrorMessage(null);
-      const res = await fetch(API_URL, {
+
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${openrouterKey}`,
+          'Authorization': `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
           'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://yourdomain.com',
+          'X-Title': 'JobIntel JD Extractor',
         },
         body: JSON.stringify({
-          model: 'mistralai/mistral-7b-instruct:free',
+          model: 'openai/gpt-3.5-turbo',
           messages: [
             { role: 'system', content: 'You are a helpful assistant that extracts structured job information.' },
-            { role: 'user', content: `Extract Job Title, Key Skills, Experience, and Education from the following JD:\n\n${jobDescription}` }
+            { role: 'user', content: `Extract Job Title, Key Skills, Experience, and Education from the following JD:\n\n${jobDescription}` },
           ],
         }),
       });
 
-      const data = await res.json();
+      const data = await response.json();
       const content = data?.choices?.[0]?.message?.content;
+
       if (content) {
         setExtractedInfo(content);
         setIsProcessed(true);
       } else {
-        throw new Error('No content returned from OpenRouter.');
+        throw new Error('No response from OpenRouter API.');
       }
     } catch (err: any) {
       const message = err?.message || 'Unknown error occurred';
@@ -214,3 +239,4 @@ const JobDescriptionInput = () => {
 };
 
 export default JobDescriptionInput;
+
