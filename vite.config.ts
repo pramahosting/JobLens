@@ -1,9 +1,8 @@
+// vite.config.ts
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
-
-// For polyfilling Node.js built-ins like stream, buffer, etc.
 import { NodeGlobalsPolyfillPlugin } from '@esbuild-plugins/node-globals-polyfill';
 import { NodeModulesPolyfillPlugin } from '@esbuild-plugins/node-modules-polyfill';
 
@@ -20,21 +19,20 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
       stream: "stream-browserify",
-      buffer: "buffer",
-    },
+      buffer: "buffer"
+    }
   },
   optimizeDeps: {
     esbuildOptions: {
       define: {
-        global: "globalThis",
+        global: 'globalThis'
       },
       plugins: [
         NodeGlobalsPolyfillPlugin({
-          buffer: true,
-          process: true,
+          buffer: true
         }),
-        NodeModulesPolyfillPlugin(),
-      ],
-    },
-  },
+        NodeModulesPolyfillPlugin()
+      ]
+    }
+  }
 }));
