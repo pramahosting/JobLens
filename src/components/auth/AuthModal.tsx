@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { FcGoogle } from 'react-icons/fc';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -21,12 +21,23 @@ const AuthModal = ({ isOpen, onClose, mode, onSuccess }: AuthModalProps) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
+  useEffect(() => {
+    const storedEmail = localStorage.getItem('rememberedEmail');
+    const storedPassword = localStorage.getItem('rememberedPassword');
+    if (storedEmail && storedPassword) {
+      setEmail(storedEmail);
+      setPassword(storedPassword);
+      setRememberMe(true);
+    }
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (currentMode === 'signup' && password !== confirmPassword) {
       toast({
         title: "Error",
@@ -37,16 +48,33 @@ const AuthModal = ({ isOpen, onClose, mode, onSuccess }: AuthModalProps) => {
     }
 
     setIsLoading(true);
-    
-    // Simulate API call
+
     setTimeout(() => {
       setIsLoading(false);
+
+      if (rememberMe && currentMode === 'login') {
+        localStorage.setItem('rememberedEmail', email);
+        localStorage.setItem('rememberedPassword', password);
+      } else {
+        localStorage.removeItem('rememberedEmail');
+        localStorage.removeItem('rememberedPassword');
+      }
+
       toast({
-        title: "Success",
+        title: "Welcome",
         description: currentMode === 'login' ? "Logged in successfully!" : "Account created successfully!",
       });
       onSuccess();
     }, 1500);
+  };
+
+  const handleGoogleLogin = () => {
+    toast({
+      title: 'Google Login (Placeholder)',
+      description: 'Redirecting to Google login...',
+    });
+
+    // Redirect logic for real auth can be inserted here
   };
 
   const resetForm = () => {
@@ -54,6 +82,7 @@ const AuthModal = ({ isOpen, onClose, mode, onSuccess }: AuthModalProps) => {
     setPassword('');
     setConfirmPassword('');
     setName('');
+    setRememberMe(false);
   };
 
   const switchMode = (newMode: 'login' | 'signup') => {
@@ -69,13 +98,13 @@ const AuthModal = ({ isOpen, onClose, mode, onSuccess }: AuthModalProps) => {
             {currentMode === 'login' ? 'Welcome Back' : 'Create Account'}
           </DialogTitle>
         </DialogHeader>
-        
+
         <Tabs value={currentMode} onValueChange={(value) => switchMode(value as 'login' | 'signup')}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="login">Login</TabsTrigger>
             <TabsTrigger value="signup">Sign Up</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="login">
             <Card>
               <CardHeader>
@@ -106,18 +135,47 @@ const AuthModal = ({ isOpen, onClose, mode, onSuccess }: AuthModalProps) => {
                       required
                     />
                   </div>
-                  <Button 
-                    type="submit" 
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="remember-me"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        className="h-4 w-4 border-gray-300 rounded"
+                      />
+                      <Label htmlFor="remember-me" className="text-sm">
+                        Remember Me
+                      </Label>
+                    </div>
+                    <button
+                      type="button"
+                      className="text-sm text-blue-600 hover:underline"
+                      onClick={() => toast({ title: 'Forgot Password', description: 'Reset link will be sent (UI only).' })}
+                    >
+                      Forgot Password?
+                    </button>
+                  </div>
+                  <Button
+                    type="submit"
                     className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
                     disabled={isLoading}
                   >
                     {isLoading ? 'Logging in...' : 'Login'}
                   </Button>
+                  <Button
+                    type="button"
+                    onClick={handleGoogleLogin}
+                    className="w-full flex items-center justify-center gap-2 bg-white border mt-2 text-gray-800 hover:bg-gray-50"
+                  >
+                    <FcGoogle className="w-5 h-5" />
+                    Sign in with Google
+                  </Button>
                 </form>
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="signup">
             <Card>
               <CardHeader>
@@ -168,8 +226,8 @@ const AuthModal = ({ isOpen, onClose, mode, onSuccess }: AuthModalProps) => {
                       required
                     />
                   </div>
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
                     disabled={isLoading}
                   >
