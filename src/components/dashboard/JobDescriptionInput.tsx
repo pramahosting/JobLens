@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import mammoth from 'mammoth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -7,87 +8,134 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileText, Upload, Link2, CheckCircle, Undo2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
+import OpenAI from 'openai';
 
-const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
-const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+// API key and openai client setup as before
+const openaiKey = import.meta.env.VITE_OPENAI_API_KEY;
+const openai = new OpenAI({ apiKey: openaiKey, dangerouslyAllowBrowser: true });
 
 const JobDescriptionInput = () => {
   const [jobDescription, setJobDescription] = useState('');
+  const [fileUrl, setFileUrl] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isProcessed, setIsProcessed] = useState(false);
   const [extractedInfo, setExtractedInfo] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('text');
   const { toast } = useToast();
 
+  // Updated file change handler - extract DOCX text with mammoth
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const text = reader.result as string;
-      setJobDescription(text);
-    };
-    reader.readAsText(file);
-    setSelectedFile(file);
-    toast({ title: 'File selected', description: file.name });
-  };
-
-  const handleProcessDescription = async () => {
-    if (!jobDescription.trim()) {
-      toast({ title: 'Error', description: 'Please enter a job description.', variant: 'destructive' });
-      return;
-    }
-
-    try {
-      setIsProcessed(false);
-      setExtractedInfo(null);
-      setErrorMessage(null);
-
-      const response = await fetch(OPENROUTER_API_URL, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': 'http://localhost:5173',
-          'X-Title': 'JobIntel GPT',
-        },
-        body: JSON.stringify({
-          model: 'openai/gpt-4',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a helpful assistant that extracts structured job information in a readable summary with bullet points under categories like Job Title, Key Skills, Experience, Tools, Responsibilities, etc.',
-            },
-            {
-              role: 'user',
-              content: `Extract Job Title, Key Skills, Responsibilities, Experience, Tools, Qualifications, and Soft Skills from the following JD:\n\n${jobDescription}`,
-            },
-          ],
-        }),
-      });
-
-      const result = await response.json();
-      const content = result?.choices?.[0]?.message?.content;
-
-      if (content) {
-        setExtractedInfo(content);
-        setIsProcessed(true);
-      } else {
-        throw new Error('No content returned from OpenRouter.');
+    if (file) {
+      const allowedTypes = [
+        'application/pdf',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      ];
+      if (!allowedTypes.includes(file.type)) {
+        toast({
+          title: 'Invalid file type',
+          description: 'Please select a PDF or DOCX file',
+          variant: 'destructive',
+        });
+        return;
       }
-    } catch (error: any) {
-      setErrorMessage(error.message);
-      toast({ title: 'Processing failed', description: error.message, variant: 'destructive' });
+
+      setSelectedFile(file);
+
+      if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        // DOCX extraction
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+          const arrayBuffer = event.target?.result;
+          if (arrayBuffer) {
+            try {
+              const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer as ArrayBuffer });
+              setJobDescription(result.value);
+              setActiveTab('text'); // switch to text tab to show extracted content
+              toast({
+                title: 'File processed',
+                description: `Extracted text from ${file.name}`,
+              });
+            } catch (error) {
+              toast({
+                title: 'Extraction failed',
+                description: 'Could not extract text from DOCX file',
+                variant: 'destructive',
+              });
+            }
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      } else if (file.type === 'application/pdf') {
+        // For now: reject PDFs or show a warning
+        toast({
+          title: 'PDF support',
+          description: 'PDF extraction not yet implemented',
+          variant: 'warning',
+        });
+        // You can add PDF extraction later using pdfjs-dist if needed
+      }
     }
   };
 
   const handleReset = () => {
     setJobDescription('');
+    setFileUrl('');
     setSelectedFile(null);
     setIsProcessed(false);
     setExtractedInfo(null);
     setErrorMessage(null);
+  };
+
+  const handleProcessDescription = async () => {
+    if (!jobDescription.trim()) {
+      toast({
+        title: 'Input required',
+        description: 'Please enter a job description or upload a valid file.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setErrorMessage(null);
+    setIsProcessed(false);
+    setExtractedInfo(null);
+
+    try {
+      // Example OpenRouter API call - replace with your endpoint and model
+      const res = await openai.chat.completions.create({
+        model: 'openrouter/gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content:
+              'You are a helpful assistant that extracts structured job information.',
+          },
+          {
+            role: 'user',
+            content: `Extract Job Title, Key Skills, Experience, and Education from the following JD:\n\n${jobDescription}`,
+          },
+        ],
+        temperature: 0.3,
+      });
+
+      const content = res.choices?.[0]?.message?.content;
+      if (content) {
+        setExtractedInfo(content);
+        setIsProcessed(true);
+      } else {
+        throw new Error('No content returned from API.');
+      }
+    } catch (err: any) {
+      const message = err?.message || 'Unknown error occurred';
+      setErrorMessage(message);
+      toast({
+        title: 'Failed to process JD',
+        description: message,
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
@@ -99,7 +147,7 @@ const JobDescriptionInput = () => {
           </div>
           <div>
             <CardTitle className="text-xl">Job Description Input</CardTitle>
-            <CardDescription>Provide job details via text or file upload</CardDescription>
+            <CardDescription>Provide job details via text, file upload, or URL</CardDescription>
           </div>
         </div>
         {isProcessed && (
@@ -111,10 +159,11 @@ const JobDescriptionInput = () => {
       </CardHeader>
 
       <CardContent className="space-y-6 flex-grow overflow-auto">
-        <Tabs defaultValue="text">
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="text">Direct Text</TabsTrigger>
             <TabsTrigger value="file">File Upload</TabsTrigger>
+            <TabsTrigger value="url">URL</TabsTrigger>
           </TabsList>
 
           <TabsContent value="text" className="space-y-4">
@@ -133,10 +182,16 @@ const JobDescriptionInput = () => {
           <TabsContent value="file" className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="file-upload">Upload Job Description</Label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition-colors">
                 <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-sm text-gray-600 mb-4">Upload a .txt, .pdf, or .docx file</p>
-                <Input id="file-upload" type="file" accept=".txt,.pdf,.docx" onChange={handleFileChange} />
+                <p className="text-sm text-gray-600 mb-4">Drop your file here or click to browse</p>
+                <Input
+                  id="file-upload"
+                  type="file"
+                  accept=".pdf,.docx"
+                  onChange={handleFileChange}
+                  className="max-w-xs mx-auto"
+                />
               </div>
               {selectedFile && (
                 <div className="bg-blue-50 p-3 rounded-lg">
@@ -147,10 +202,30 @@ const JobDescriptionInput = () => {
               )}
             </div>
           </TabsContent>
+
+          <TabsContent value="url" className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="file-url">File URL</Label>
+              <div className="relative">
+                <Link2 className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  id="file-url"
+                  type="url"
+                  placeholder="https://example.com/job-description.pdf"
+                  value={fileUrl}
+                  onChange={(e) => setFileUrl(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+          </TabsContent>
         </Tabs>
 
         <div className="flex justify-end pt-2">
-          <Button onClick={handleProcessDescription} className="bg-blue-600 hover:bg-blue-700 text-white font-medium">
+          <Button
+            onClick={handleProcessDescription}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium"
+          >
             Process Description
           </Button>
         </div>
@@ -169,7 +244,11 @@ const JobDescriptionInput = () => {
         )}
 
         <div className="flex justify-end mt-6">
-          <Button variant="ghost" onClick={handleReset} className="text-red-500 hover:text-red-700 flex items-center space-x-1">
+          <Button
+            variant="ghost"
+            onClick={handleReset}
+            className="text-red-500 hover:text-red-700 flex items-center space-x-1"
+          >
             <Undo2 className="w-4 h-4" />
             <span>Reset</span>
           </Button>
@@ -180,4 +259,5 @@ const JobDescriptionInput = () => {
 };
 
 export default JobDescriptionInput;
+
 
