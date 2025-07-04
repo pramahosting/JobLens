@@ -4,10 +4,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, Upload, Link2, CheckCircle } from 'lucide-react';
+import { FileText, Upload, Link2, CheckCircle, Undo2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Undo2 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 const JobDescriptionInput = () => {
   const [jobDescription, setJobDescription] = useState('');
@@ -44,6 +44,22 @@ const JobDescriptionInput = () => {
     setIsProcessed(false);
   };
 
+  const handleDownloadExcel = () => {
+    const extractedData = [{
+      "Job Title": "Senior Software Engineer",
+      "Key Skills": "React, Node.js, TypeScript, AWS",
+      "Experience": "5+ years",
+      "Education": "Bachelor's in Computer Science"
+    }];
+
+    const worksheet = XLSX.utils.json_to_sheet(extractedData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Extracted Info");
+
+    const fileName = selectedFile?.name?.replace(/\.[^/.]+$/, "") || "JobDescription";
+    XLSX.writeFile(workbook, `${fileName}_Extracted.xlsx`);
+  };
+
   return (
     <Card className="h-full border-0 shadow-lg bg-white/80 backdrop-blur-sm flex flex-col">
       <CardHeader>
@@ -65,7 +81,7 @@ const JobDescriptionInput = () => {
           </div>
         )}
       </CardHeader>
-      
+
       <CardContent className="space-y-6 flex-grow overflow-auto">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-3">
@@ -132,18 +148,25 @@ const JobDescriptionInput = () => {
         </Tabs>
 
         {isProcessed && (
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg mt-4">
-            <h4 className="font-semibold text-gray-800 mb-2">Extracted Information:</h4>
-            <div className="space-y-2 text-sm">
-              <div><strong>Job Title:</strong> Senior Software Engineer</div>
-              <div><strong>Key Skills:</strong> React, Node.js, TypeScript, AWS</div>
-              <div><strong>Experience:</strong> 5+ years</div>
-              <div><strong>Education:</strong> Bachelor's in Computer Science</div>
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg mt-4 space-y-4">
+            <div>
+              <h4 className="font-semibold text-gray-800 mb-2">Extracted Information:</h4>
+              <div className="space-y-2 text-sm">
+                <div><strong>Job Title:</strong> Senior Software Engineer</div>
+                <div><strong>Key Skills:</strong> React, Node.js, TypeScript, AWS</div>
+                <div><strong>Experience:</strong> 5+ years</div>
+                <div><strong>Education:</strong> Bachelor's in Computer Science</div>
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <Button onClick={handleDownloadExcel} className="bg-blue-600 hover:bg-blue-700 text-white font-medium">
+                Download Extracted Excel
+              </Button>
             </div>
           </div>
         )}
 
-        {/* RESET BUTTON - Added here */}
+        {/* RESET BUTTON */}
         <div className="flex justify-end mt-6">
           <Button
             variant="ghost"
@@ -154,7 +177,6 @@ const JobDescriptionInput = () => {
             <span>Reset</span>
           </Button>
         </div>
-
       </CardContent>
     </Card>
   );
