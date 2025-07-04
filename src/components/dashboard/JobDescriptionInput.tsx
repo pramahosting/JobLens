@@ -7,11 +7,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileText, Upload, Link2, CheckCircle, Undo2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import OpenAI from 'openai';
 
-// 🔐 API Key via Vite environment
-const openaiKey = import.meta.env.VITE_OPENAI_API_KEY;
-const openai = new OpenAI({ apiKey: openaiKey, dangerouslyAllowBrowser: true });
+// Get Hugging Face API key from environment variable
+const HF_API_KEY = import.meta.env.VITE_HF_API_KEY;
+
+// Hugging Face GPT-2 model inference endpoint (can replace with another model)
+const HF_API_URL = "https://api-inference.huggingface.co/models/gpt2";
 
 const JobDescriptionInput = () => {
   const [jobDescription, setJobDescription] = useState('');
@@ -50,32 +51,49 @@ const JobDescriptionInput = () => {
   };
 
   const handleProcessDescription = async () => {
+    if (!jobDescription.trim()) {
+      toast({ title: 'Input required', description: 'Please enter a job description', variant: 'destructive' });
+      return;
+    }
+    setErrorMessage(null);
+    setIsProcessed(false);
+    setExtractedInfo(null);
+
     try {
-      setErrorMessage(null); // clear previous error
-      const res = await openai.chat.completions.create({
-        model: 'gpt-4o',
-        messages: [
-          { role: 'system', content: 'You are a helpful assistant that extracts structured job information.' },
-          { role: 'user', content: `Extract Job Title, Key Skills, Experience, and Education from the following JD:\n\n${jobDescription}` }
-        ],
-        temperature: 0.3,
+      const response = await fetch(HF_API_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${HF_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          inputs: `Extract Job Title, Key Skills, Experience, and Education from the following JD:\n\n${jobDescription}`,
+          parameters: { max_length: 512, temperature: 0.3 },
+        }),
       });
 
-      const content = res.choices?.[0]?.message?.content;
-      if (content) {
-        setExtractedInfo(content);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to fetch from Hugging Face API");
+      }
+
+      const data = await response.json();
+
+      // The output structure depends on the model, GPT2 returns generated text in data[0].generated_text
+      if (Array.isArray(data) && data[0]?.generated_text) {
+        setExtractedInfo(data[0].generated_text);
+        setIsProcessed(true);
+      } else if (typeof data.generated_text === 'string') {
+        setExtractedInfo(data.generated_text);
         setIsProcessed(true);
       } else {
-        throw new Error('No content returned from OpenAI.');
+        throw new Error("Unexpected response format from Hugging Face API");
       }
     } catch (err: any) {
-      const message = err?.message || 'Unknown error occurred';
-      setErrorMessage(message);
-      setExtractedInfo(null);
-      setIsProcessed(false);
+      setErrorMessage(err.message || 'Unknown error occurred');
       toast({
         title: 'Failed to process JD',
-        description: message,
+        description: err.message || 'API call failed',
         variant: 'destructive',
       });
     }
@@ -202,4 +220,5 @@ const JobDescriptionInput = () => {
 };
 
 export default JobDescriptionInput;
+
 
