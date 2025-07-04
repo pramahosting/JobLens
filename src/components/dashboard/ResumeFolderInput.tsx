@@ -5,9 +5,8 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { FolderOpen, Link2, Users, CheckCircle, Undo2, Download } from 'lucide-react';
+import { FolderOpen, Link2, Users, CheckCircle, Undo2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import * as XLSX from 'xlsx';
 
 const ResumeFolderInput = () => {
   const [folderPath, setFolderPath] = useState('');
@@ -26,22 +25,6 @@ const ResumeFolderInput = () => {
         title: 'Folder selected',
         description: `Found ${files.length} resume files`,
       });
-
-      // Simulate processing and populate results (you should replace with real logic)
-      setTimeout(() => {
-        const dummyResults = Array.from({ length: files.length }).map((_, i) => ({
-          name: `Candidate ${i + 1}`,
-          email: `candidate${i + 1}@email.com`,
-          phone: `040000000${i}`,
-          atsScore: 70 + i % 20,
-          status: i % 3 === 0 ? 'qualified' : 'review',
-          strengths: ['React', 'Node.js'],
-          gaps: ['AWS', 'Docker']
-        }));
-        setResults(dummyResults);
-        setIsCompleted(true);
-        setProgress(100);
-      }, 1000);
     }
   };
 
@@ -51,25 +34,6 @@ const ResumeFolderInput = () => {
     setIsCompleted(false);
     setResults([]);
     setProgress(0);
-  };
-
-  const handleDownloadExcel = () => {
-    const sheetData = results.map((r) => ({
-      Name: r.name,
-      Email: r.email,
-      Phone: r.phone,
-      ATSScore: r.atsScore,
-      Status: r.status,
-      Strengths: r.strengths.join(', '),
-      Gaps: r.gaps.join(', ')
-    }));
-
-    const ws = XLSX.utils.json_to_sheet(sheetData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Candidates');
-
-    const fileName = folderPath.split(' ')[0] || 'ResumeResults';
-    XLSX.writeFile(wb, `${fileName}_ExtractedResults.xlsx`);
   };
 
   const getStatusColor = (status: string) => {
@@ -115,6 +79,7 @@ const ResumeFolderInput = () => {
             <TabsTrigger value="cloud">Cloud Folder Link</TabsTrigger>
           </TabsList>
 
+          {/* Folder Upload Tab */}
           <TabsContent value="folder">
             <div className="space-y-2">
               <Label htmlFor="folder-input">Choose Folder</Label>
@@ -149,6 +114,7 @@ const ResumeFolderInput = () => {
             </div>
           </TabsContent>
 
+          {/* Cloud Folder Link Tab */}
           <TabsContent value="cloud">
             <div className="space-y-2">
               <Label htmlFor="cloud-link">Paste Cloud Folder Link</Label>
@@ -230,13 +196,6 @@ const ResumeFolderInput = () => {
                   </div>
                 </div>
               ))}
-            </div>
-
-            <div className="flex justify-end pt-2">
-              <Button onClick={handleDownloadExcel} className="bg-blue-600 text-white hover:bg-blue-700">
-                <Download className="h-4 w-4 mr-2" />
-                Download Excel
-              </Button>
             </div>
           </div>
         )}
