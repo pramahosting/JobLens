@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,7 +6,6 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { FcGoogle } from 'react-icons/fc';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -25,13 +24,16 @@ const AuthModal = ({ isOpen, onClose, mode, onSuccess }: AuthModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
+  // Load from localStorage (only client-side)
   useEffect(() => {
-    const storedEmail = localStorage.getItem('rememberedEmail');
-    const storedPassword = localStorage.getItem('rememberedPassword');
-    if (storedEmail && storedPassword) {
-      setEmail(storedEmail);
-      setPassword(storedPassword);
-      setRememberMe(true);
+    if (typeof window !== 'undefined') {
+      const savedEmail = localStorage.getItem('savedEmail');
+      const savedPassword = localStorage.getItem('savedPassword');
+      if (savedEmail && savedPassword) {
+        setEmail(savedEmail);
+        setPassword(savedPassword);
+        setRememberMe(true);
+      }
     }
   }, []);
 
@@ -40,41 +42,35 @@ const AuthModal = ({ isOpen, onClose, mode, onSuccess }: AuthModalProps) => {
 
     if (currentMode === 'signup' && password !== confirmPassword) {
       toast({
-        title: "Error",
+        title: 'Error',
         description: "Passwords don't match",
-        variant: "destructive"
+        variant: 'destructive',
       });
       return;
     }
 
     setIsLoading(true);
 
+    // Simulated API call
     setTimeout(() => {
       setIsLoading(false);
 
-      if (rememberMe && currentMode === 'login') {
-        localStorage.setItem('rememberedEmail', email);
-        localStorage.setItem('rememberedPassword', password);
+      // Save to localStorage if "Remember Me" is checked
+      if (rememberMe && typeof window !== 'undefined') {
+        localStorage.setItem('savedEmail', email);
+        localStorage.setItem('savedPassword', password);
       } else {
-        localStorage.removeItem('rememberedEmail');
-        localStorage.removeItem('rememberedPassword');
+        localStorage.removeItem('savedEmail');
+        localStorage.removeItem('savedPassword');
       }
 
       toast({
-        title: "Welcome",
-        description: currentMode === 'login' ? "Logged in successfully!" : "Account created successfully!",
+        title: 'Success',
+        description: currentMode === 'login' ? 'Logged in successfully!' : 'Account created successfully!',
       });
+
       onSuccess();
     }, 1500);
-  };
-
-  const handleGoogleLogin = () => {
-    toast({
-      title: 'Google Login (Placeholder)',
-      description: 'Redirecting to Google login...',
-    });
-
-    // Redirect logic for real auth can be inserted here
   };
 
   const resetForm = () => {
@@ -105,13 +101,12 @@ const AuthModal = ({ isOpen, onClose, mode, onSuccess }: AuthModalProps) => {
             <TabsTrigger value="signup">Sign Up</TabsTrigger>
           </TabsList>
 
+          {/* 🔐 Login Tab */}
           <TabsContent value="login">
             <Card>
               <CardHeader>
                 <CardTitle>Login</CardTitle>
-                <CardDescription>
-                  Enter your credentials to access your account
-                </CardDescription>
+                <CardDescription>Enter your credentials to access your account</CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -135,26 +130,17 @@ const AuthModal = ({ isOpen, onClose, mode, onSuccess }: AuthModalProps) => {
                       required
                     />
                   </div>
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id="remember-me"
-                        checked={rememberMe}
-                        onChange={(e) => setRememberMe(e.target.checked)}
-                        className="h-4 w-4 border-gray-300 rounded"
-                      />
-                      <Label htmlFor="remember-me" className="text-sm">
-                        Remember Me
-                      </Label>
-                    </div>
-                    <button
-                      type="button"
-                      className="text-sm text-blue-600 hover:underline"
-                      onClick={() => toast({ title: 'Forgot Password', description: 'Reset link will be sent (UI only).' })}
-                    >
-                      Forgot Password?
-                    </button>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="remember-me"
+                      checked={rememberMe}
+                      onChange={() => setRememberMe(!rememberMe)}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="remember-me" className="text-sm text-gray-600">
+                      Remember me
+                    </Label>
                   </div>
                   <Button
                     type="submit"
@@ -163,26 +149,17 @@ const AuthModal = ({ isOpen, onClose, mode, onSuccess }: AuthModalProps) => {
                   >
                     {isLoading ? 'Logging in...' : 'Login'}
                   </Button>
-                  <Button
-                    type="button"
-                    onClick={handleGoogleLogin}
-                    className="w-full flex items-center justify-center gap-2 bg-white border mt-2 text-gray-800 hover:bg-gray-50"
-                  >
-                    <FcGoogle className="w-5 h-5" />
-                    Sign in with Google
-                  </Button>
                 </form>
               </CardContent>
             </Card>
           </TabsContent>
 
+          {/* 📝 Signup Tab */}
           <TabsContent value="signup">
             <Card>
               <CardHeader>
                 <CardTitle>Sign Up</CardTitle>
-                <CardDescription>
-                  Create a new account to get started
-                </CardDescription>
+                <CardDescription>Create a new account to get started</CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
