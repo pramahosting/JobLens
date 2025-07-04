@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
-import {Textarea} from '@/components/ui/textarea';
-import {Input} from '@/components/ui/input';
-import {Label} from '@/components/ui/label';
-import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs';
-import {FileText, Upload, Link2, CheckCircle, Undo2} from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { FileText, Upload, Link2, CheckCircle, Undo2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import OpenAI from 'openai';
+
+// 🔐 API Key via Vite environment
 const openaiKey = import.meta.env.VITE_OPENAI_API_KEY;
+const openai = new OpenAI({ apiKey: openaiKey, dangerouslyAllowBrowser: true });
 
 const JobDescriptionInput = () => {
   const [jobDescription, setJobDescription] = useState('');
@@ -16,6 +19,7 @@ const JobDescriptionInput = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isProcessed, setIsProcessed] = useState(false);
   const [extractedInfo, setExtractedInfo] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('text');
   const { toast } = useToast();
 
@@ -25,15 +29,12 @@ const JobDescriptionInput = () => {
       const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
       if (allowedTypes.includes(file.type)) {
         setSelectedFile(file);
-        toast({
-          title: "File selected",
-          description: `Selected: ${file.name}`,
-        });
+        toast({ title: 'File selected', description: `Selected: ${file.name}` });
       } else {
         toast({
-          title: "Invalid file type",
-          description: "Please select a PDF or DOCX file",
-          variant: "destructive"
+          title: 'Invalid file type',
+          description: 'Please select a PDF or DOCX file',
+          variant: 'destructive',
         });
       }
     }
@@ -45,36 +46,37 @@ const JobDescriptionInput = () => {
     setSelectedFile(null);
     setIsProcessed(false);
     setExtractedInfo(null);
+    setErrorMessage(null);
   };
 
-  // 🔷 MODIFIED SECTION: Process JD using ChatGPT
   const handleProcessDescription = async () => {
     try {
+      setErrorMessage(null); // clear previous error
       const res = await openai.chat.completions.create({
         model: 'gpt-4',
         messages: [
-          {
-            role: 'system',
-            content: 'You are a helpful assistant that extracts structured job information.'
-          },
-          {
-            role: 'user',
-            content: `Extract Job Title, Key Skills, Experience, and Education from the following JD:\n\n${jobDescription}`
-          }
+          { role: 'system', content: 'You are a helpful assistant that extracts structured job information.' },
+          { role: 'user', content: `Extract Job Title, Key Skills, Experience, and Education from the following JD:\n\n${jobDescription}` }
         ],
-        temperature: 0.3
+        temperature: 0.3,
       });
+
       const content = res.choices?.[0]?.message?.content;
       if (content) {
         setExtractedInfo(content);
         setIsProcessed(true);
+      } else {
+        throw new Error('No content returned from OpenAI.');
       }
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      const message = err?.message || 'Unknown error occurred';
+      setErrorMessage(message);
+      setExtractedInfo(null);
+      setIsProcessed(false);
       toast({
         title: 'Failed to process JD',
-        description: 'Please check console or API key',
-        variant: 'destructive'
+        description: message,
+        variant: 'destructive',
       });
     }
   };
@@ -88,9 +90,7 @@ const JobDescriptionInput = () => {
           </div>
           <div>
             <CardTitle className="text-xl">Job Description Input</CardTitle>
-            <CardDescription>
-              Provide job details via text, file upload, or URL
-            </CardDescription>
+            <CardDescription>Provide job details via text, file upload, or URL</CardDescription>
           </div>
         </div>
         {isProcessed && (
@@ -127,9 +127,7 @@ const JobDescriptionInput = () => {
               <Label htmlFor="file-upload">Upload Job Description</Label>
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition-colors">
                 <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-sm text-gray-600 mb-4">
-                  Drop your file here or click to browse
-                </p>
+                <p className="text-sm text-gray-600 mb-4">Drop your file here or click to browse</p>
                 <Input
                   id="file-upload"
                   type="file"
@@ -175,6 +173,12 @@ const JobDescriptionInput = () => {
           </Button>
         </div>
 
+        {errorMessage && (
+          <div className="bg-red-50 text-red-800 border border-red-200 p-4 rounded mt-4 text-sm">
+            <strong>Error:</strong> {errorMessage}
+          </div>
+        )}
+
         {extractedInfo && (
           <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg mt-4">
             <h4 className="font-semibold text-gray-800 mb-2">Extracted Job Information:</h4>
@@ -198,5 +202,6 @@ const JobDescriptionInput = () => {
 };
 
 export default JobDescriptionInput;
+
 
 
