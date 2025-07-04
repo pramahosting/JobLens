@@ -2,9 +2,15 @@ import React, { useState } from 'react';
 import {
   Card, CardContent, CardDescription, CardHeader, CardTitle
 } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import {
+  Textarea
+} from '@/components/ui/textarea';
+import {
+  Input
+} from '@/components/ui/input';
+import {
+  Label
+} from '@/components/ui/label';
 import {
   Tabs, TabsContent, TabsList, TabsTrigger
 } from '@/components/ui/tabs';
@@ -13,33 +19,37 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
+import OpenAI from 'openai';
+
+const openai = new OpenAI({
+  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
+  dangerouslyAllowBrowser: true,
+});
 
 const JobDescriptionInput = () => {
   const [jobDescription, setJobDescription] = useState('');
   const [fileUrl, setFileUrl] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isProcessed, setIsProcessed] = useState(true); // Change to true for testing
+  const [isProcessed, setIsProcessed] = useState(false);
+  const [extractedInfo, setExtractedInfo] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('text');
   const { toast } = useToast();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const allowedTypes = [
-        'application/pdf',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-      ];
+      const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
       if (allowedTypes.includes(file.type)) {
         setSelectedFile(file);
         toast({
-          title: 'File selected',
+          title: "File selected",
           description: `Selected: ${file.name}`,
         });
       } else {
         toast({
-          title: 'Invalid file type',
-          description: 'Please select a PDF or DOCX file',
-          variant: 'destructive',
+          title: "Invalid file type",
+          description: "Please select a PDF or DOCX file",
+          variant: "destructive"
         });
       }
     }
@@ -50,6 +60,39 @@ const JobDescriptionInput = () => {
     setFileUrl('');
     setSelectedFile(null);
     setIsProcessed(false);
+    setExtractedInfo(null);
+  };
+
+  // 🔷 MODIFIED SECTION: Process JD using ChatGPT
+  const handleProcessDescription = async () => {
+    try {
+      const res = await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a helpful assistant that extracts structured job information.'
+          },
+          {
+            role: 'user',
+            content: `Extract Job Title, Key Skills, Experience, and Education from the following JD:\n\n${jobDescription}`
+          }
+        ],
+        temperature: 0.3
+      });
+      const content = res.choices?.[0]?.message?.content;
+      if (content) {
+        setExtractedInfo(content);
+        setIsProcessed(true);
+      }
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: 'Failed to process JD',
+        description: 'Please check console or API key',
+        variant: 'destructive'
+      });
+    }
   };
 
   return (
@@ -69,9 +112,7 @@ const JobDescriptionInput = () => {
         {isProcessed && (
           <div className="flex items-center space-x-2 text-green-600 bg-green-50 p-2 rounded-lg mt-2">
             <CheckCircle className="h-4 w-4" />
-            <span className="text-sm font-medium">
-              Job description processed successfully
-            </span>
+            <span className="text-sm font-medium">Job description processed successfully</span>
           </div>
         )}
       </CardHeader>
@@ -141,17 +182,19 @@ const JobDescriptionInput = () => {
           </TabsContent>
         </Tabs>
 
-        {isProcessed && (
-          <div className="space-y-4 mt-4">
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg">
-              <h4 className="font-semibold text-gray-800 mb-2">Extracted Job Description</h4>
-              <div className="space-y-1 text-sm text-gray-700">
-                <div><strong>Job Title:</strong> Senior Software Engineer</div>
-                <div><strong>Key Skills:</strong> React, Node.js, TypeScript, AWS</div>
-                <div><strong>Experience:</strong> 5+ years</div>
-                <div><strong>Education:</strong> Bachelor's in Computer Science</div>
-              </div>
-            </div>
+        <div className="flex justify-end pt-2">
+          <Button
+            onClick={handleProcessDescription}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium"
+          >
+            Process Description
+          </Button>
+        </div>
+
+        {extractedInfo && (
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg mt-4">
+            <h4 className="font-semibold text-gray-800 mb-2">Extracted Job Information:</h4>
+            <pre className="whitespace-pre-wrap text-sm text-gray-700">{extractedInfo}</pre>
           </div>
         )}
 
@@ -171,4 +214,5 @@ const JobDescriptionInput = () => {
 };
 
 export default JobDescriptionInput;
+
 
