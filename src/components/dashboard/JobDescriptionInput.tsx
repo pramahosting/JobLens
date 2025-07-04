@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import mammoth from 'mammoth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -8,11 +7,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileText, Upload, Link2, CheckCircle, Undo2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import OpenAI from 'openai';
-
-// API key and openai client setup as before
-const openaiKey = import.meta.env.VITE_OPENAI_API_KEY;
-const openai = new OpenAI({ apiKey: openaiKey, dangerouslyAllowBrowser: true });
 
 const JobDescriptionInput = () => {
   const [jobDescription, setJobDescription] = useState('');
@@ -24,57 +18,46 @@ const JobDescriptionInput = () => {
   const [activeTab, setActiveTab] = useState('text');
   const { toast } = useToast();
 
-  // Updated file change handler - extract DOCX text with mammoth
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Helper: read file content as text (simple text extraction for .txt/.pdf/.docx you might need extra libs)
+  const readFileAsText = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') resolve(reader.result);
+        else reject('Failed to read file');
+      };
+      reader.onerror = () => reject(reader.error);
+      reader.readAsText(file);
+    });
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const allowedTypes = [
         'application/pdf',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'text/plain',
       ];
-      if (!allowedTypes.includes(file.type)) {
+      if (allowedTypes.includes(file.type) || file.name.endsWith('.txt')) {
+        setSelectedFile(file);
+        toast({ title: 'File selected', description: `Selected: ${file.name}` });
+        try {
+          const text = await readFileAsText(file);
+          setJobDescription(text);
+          setActiveTab('text');
+          setIsProcessed(false);
+          setExtractedInfo(null);
+          setErrorMessage(null);
+        } catch (err) {
+          toast({ title: 'Error reading file', description: `${err}`, variant: 'destructive' });
+        }
+      } else {
         toast({
           title: 'Invalid file type',
-          description: 'Please select a PDF or DOCX file',
+          description: 'Please select a PDF, DOCX, or TXT file',
           variant: 'destructive',
         });
-        return;
-      }
-
-      setSelectedFile(file);
-
-      if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-        // DOCX extraction
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-          const arrayBuffer = event.target?.result;
-          if (arrayBuffer) {
-            try {
-              const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer as ArrayBuffer });
-              setJobDescription(result.value);
-              setActiveTab('text'); // switch to text tab to show extracted content
-              toast({
-                title: 'File processed',
-                description: `Extracted text from ${file.name}`,
-              });
-            } catch (error) {
-              toast({
-                title: 'Extraction failed',
-                description: 'Could not extract text from DOCX file',
-                variant: 'destructive',
-              });
-            }
-          }
-        };
-        reader.readAsArrayBuffer(file);
-      } else if (file.type === 'application/pdf') {
-        // For now: reject PDFs or show a warning
-        toast({
-          title: 'PDF support',
-          description: 'PDF extraction not yet implemented',
-          variant: 'warning',
-        });
-        // You can add PDF extraction later using pdfjs-dist if needed
       }
     }
   };
@@ -91,48 +74,59 @@ const JobDescriptionInput = () => {
   const handleProcessDescription = async () => {
     if (!jobDescription.trim()) {
       toast({
-        title: 'Input required',
-        description: 'Please enter a job description or upload a valid file.',
-        variant: 'destructive',
+        title: "Error",
+        description: "Please enter a job description",
+        variant: "destructive",
       });
       return;
     }
-
     setErrorMessage(null);
     setIsProcessed(false);
     setExtractedInfo(null);
 
     try {
-      // Example OpenRouter API call - replace with your endpoint and model
-      const res = await openai.chat.completions.create({
-        model: 'openrouter/gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content:
-              'You are a helpful assistant that extracts structured job information.',
-          },
-          {
-            role: 'user',
-            content: `Extract Job Title, Key Skills, Experience, and Education from the following JD:\n\n${jobDescription}`,
-          },
-        ],
-        temperature: 0.3,
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content:
+                'You are a helpful assistant that extracts structured job information.',
+            },
+            {
+              role: 'user',
+              content: `Extract Job Title, Key Skills, Experience, and Education from the following JD:\n\n${jobDescription}`,
+            },
+          ],
+          temperature: 0.3,
+        }),
       });
 
-      const content = res.choices?.[0]?.message?.content;
-      if (content) {
-        setExtractedInfo(content);
-        setIsProcessed(true);
-      } else {
-        throw new Error('No content returned from API.');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || 'Failed to fetch from OpenAI');
       }
+
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content;
+
+      if (!content) throw new Error('No content returned from OpenAI');
+
+      setExtractedInfo(content);
+      setIsProcessed(true);
     } catch (err: any) {
-      const message = err?.message || 'Unknown error occurred';
-      setErrorMessage(message);
+      setErrorMessage(err.message || 'Unknown error occurred');
+      setExtractedInfo(null);
+      setIsProcessed(false);
       toast({
         title: 'Failed to process JD',
-        description: message,
+        description: err.message || 'Unknown error occurred',
         variant: 'destructive',
       });
     }
@@ -188,7 +182,7 @@ const JobDescriptionInput = () => {
                 <Input
                   id="file-upload"
                   type="file"
-                  accept=".pdf,.docx"
+                  accept=".pdf,.docx,.txt"
                   onChange={handleFileChange}
                   className="max-w-xs mx-auto"
                 />
@@ -237,9 +231,9 @@ const JobDescriptionInput = () => {
         )}
 
         {extractedInfo && (
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg mt-4">
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg mt-4 whitespace-pre-wrap text-sm text-gray-700">
             <h4 className="font-semibold text-gray-800 mb-2">Extracted Job Information:</h4>
-            <pre className="whitespace-pre-wrap text-sm text-gray-700">{extractedInfo}</pre>
+            {extractedInfo}
           </div>
         )}
 
@@ -259,5 +253,3 @@ const JobDescriptionInput = () => {
 };
 
 export default JobDescriptionInput;
-
-
