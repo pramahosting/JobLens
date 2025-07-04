@@ -59,7 +59,9 @@
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.3",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "buffer": "^6.0.3",
+    "stream-browserify": "^3.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",
@@ -80,8 +82,7 @@
     "typescript-eslint": "^8.0.1",
     "vite": "^5.4.1",
     "xlsx": "^0.18.5",
-    "pdfjs-dist": "^3.11.174",
-    "mammoth": "^1.5.2",
-    "stream-browserify": "^3.0.0"
+    "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
+    "@esbuild-plugins/node-modules-polyfill": "^0.2.2"
   }
 }
