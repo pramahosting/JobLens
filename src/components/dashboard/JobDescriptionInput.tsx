@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -9,9 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import OpenAI from 'openai';
 
-// 🔐 API Key via Vite environment
 const openaiKey = import.meta.env.VITE_OPENAI_API_KEY;
-const openai = new OpenAI({ apiKey: openaiKey, dangerouslyAllowBrowser: true });
 
 const JobDescriptionInput = () => {
   const [jobDescription, setJobDescription] = useState('');
@@ -19,17 +17,33 @@ const JobDescriptionInput = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isProcessed, setIsProcessed] = useState(false);
   const [extractedInfo, setExtractedInfo] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('text');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [openAiKeyLoaded, setOpenAiKeyLoaded] = useState('');
   const { toast } = useToast();
+
+  // Set OpenAI key loaded status on UI
+  useEffect(() => {
+    setOpenAiKeyLoaded(`Loaded OpenAI Key: ${openaiKey ? 'Yes' : 'No or Undefined'}`);
+  }, [openaiKey]);
+
+  const openai = new OpenAI({
+    apiKey: openaiKey,
+  });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+      const allowedTypes = [
+        'application/pdf',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      ];
       if (allowedTypes.includes(file.type)) {
         setSelectedFile(file);
-        toast({ title: 'File selected', description: `Selected: ${file.name}` });
+        toast({
+          title: 'File selected',
+          description: `Selected: ${file.name}`,
+        });
       } else {
         toast({
           title: 'Invalid file type',
@@ -49,35 +63,46 @@ const JobDescriptionInput = () => {
     setErrorMessage(null);
   };
 
+  // Process JD using ChatGPT API
   const handleProcessDescription = async () => {
+    setErrorMessage(null);
+    setExtractedInfo(null);
+    setIsProcessed(false);
+
+    if (!jobDescription.trim()) {
+      setErrorMessage('Please enter a job description to process.');
+      return;
+    }
+
     try {
-      setErrorMessage(null); // clear previous error
       const res = await openai.chat.completions.create({
         model: 'gpt-4',
         messages: [
-          { role: 'system', content: 'You are a helpful assistant that extracts structured job information.' },
-          { role: 'user', content: `Extract Job Title, Key Skills, Experience, and Education from the following JD:\n\n${jobDescription}` }
+          {
+            role: 'system',
+            content: 'You are a helpful assistant that extracts structured job information.',
+          },
+          {
+            role: 'user',
+            content: `Extract Job Title, Key Skills, Experience, and Education from the following JD:\n\n${jobDescription}`,
+          },
         ],
         temperature: 0.3,
       });
-
       const content = res.choices?.[0]?.message?.content;
       if (content) {
         setExtractedInfo(content);
         setIsProcessed(true);
       } else {
-        throw new Error('No content returned from OpenAI.');
+        setErrorMessage('No extracted information returned from API.');
       }
     } catch (err: any) {
-      const message = err?.message || 'Unknown error occurred';
+      console.error(err);
+      let message = 'Failed to process JD. Please check your API key and internet connection.';
+      if (err?.response?.status === 404) {
+        message = 'Model "gpt-4" not available or no access.';
+      }
       setErrorMessage(message);
-      setExtractedInfo(null);
-      setIsProcessed(false);
-      toast({
-        title: 'Failed to process JD',
-        description: message,
-        variant: 'destructive',
-      });
     }
   };
 
@@ -93,6 +118,12 @@ const JobDescriptionInput = () => {
             <CardDescription>Provide job details via text, file upload, or URL</CardDescription>
           </div>
         </div>
+
+        {/* Display OpenAI key loaded status */}
+        {openAiKeyLoaded && (
+          <div className="text-xs text-gray-500 italic mt-1">{openAiKeyLoaded}</div>
+        )}
+
         {isProcessed && (
           <div className="flex items-center space-x-2 text-green-600 bg-green-50 p-2 rounded-lg mt-2">
             <CheckCircle className="h-4 w-4" />
@@ -174,15 +205,15 @@ const JobDescriptionInput = () => {
         </div>
 
         {errorMessage && (
-          <div className="bg-red-50 text-red-800 border border-red-200 p-4 rounded mt-4 text-sm">
-            <strong>Error:</strong> {errorMessage}
+          <div className="bg-red-100 border border-red-400 text-red-700 p-3 rounded mt-4 text-sm">
+            {errorMessage}
           </div>
         )}
 
         {extractedInfo && (
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg mt-4">
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg mt-4 whitespace-pre-wrap text-sm text-gray-700">
             <h4 className="font-semibold text-gray-800 mb-2">Extracted Job Information:</h4>
-            <pre className="whitespace-pre-wrap text-sm text-gray-700">{extractedInfo}</pre>
+            {extractedInfo}
           </div>
         )}
 
@@ -202,6 +233,3 @@ const JobDescriptionInput = () => {
 };
 
 export default JobDescriptionInput;
-
-
-
