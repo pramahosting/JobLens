@@ -1,14 +1,29 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, Upload, Link2, CheckCircle, Undo2 } from 'lucide-react';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
+import {
+  FileText,
+  Upload,
+  Link2,
+  CheckCircle,
+  Undo2,
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import pdfParse from 'pdf-parse';
-import mammoth from 'mammoth';
 
 const JobDescriptionInput = () => {
   const [jobDescription, setJobDescription] = useState('');
@@ -43,10 +58,21 @@ const JobDescriptionInput = () => {
 
     try {
       if (file.type === 'application/pdf') {
-        const buffer = await file.arrayBuffer();
-        const data = await pdfParse(buffer);
-        setJobDescription(data.text);
+        const { GlobalWorkerOptions, getDocument } = await import('pdfjs-dist');
+        GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@3.4.120/build/pdf.worker.min.js`;
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await getDocument({ data: arrayBuffer }).promise;
+
+        let text = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          const strings = content.items.map((item: any) => item.str);
+          text += strings.join(' ') + '\n';
+        }
+        setJobDescription(text);
       } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        const mammoth = await import('mammoth/mammoth.browser');
         const arrayBuffer = await file.arrayBuffer();
         const { value } = await mammoth.extractRawText({ arrayBuffer });
         setJobDescription(value);
@@ -77,44 +103,28 @@ const JobDescriptionInput = () => {
     }
 
     try {
-      setErrorMessage(null);
-
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
           'Content-Type': 'application/json',
-          'HTTP-Referer': 'https://yourdomain.com',
-          'X-Title': 'JobIntel JD Extractor',
+          Authorization: `Bearer YOUR_OPENROUTER_API_KEY`,
         },
         body: JSON.stringify({
-          model: 'openai/gpt-3.5-turbo',
+          model: 'mistralai/mistral-7b-instruct',
           messages: [
-            { role: 'system', content: 'You are a helpful assistant that extracts structured job information.' },
-            { role: 'user', content: `Extract Job Title, Key Skills, Experience, and Education from the following JD:\n\n${jobDescription}` },
+            { role: 'system', content: 'Extract Job Title, Key Skills, Experience, and Education' },
+            { role: 'user', content: jobDescription },
           ],
         }),
       });
-
-      const data = await response.json();
-      const content = data?.choices?.[0]?.message?.content;
-
-      if (content) {
-        setExtractedInfo(content);
-        setIsProcessed(true);
-      } else {
-        throw new Error('No response from OpenRouter API.');
-      }
+      const json = await res.json();
+      setExtractedInfo(json.choices?.[0]?.message?.content || 'No result');
+      setIsProcessed(true);
+      setErrorMessage(null);
     } catch (err: any) {
-      const message = err?.message || 'Unknown error occurred';
-      setErrorMessage(message);
-      setExtractedInfo(null);
+      setErrorMessage('Failed to process job description.');
       setIsProcessed(false);
-      toast({
-        title: 'Failed to process JD',
-        description: message,
-        variant: 'destructive',
-      });
+      console.error(err);
     }
   };
 
@@ -239,4 +249,3 @@ const JobDescriptionInput = () => {
 };
 
 export default JobDescriptionInput;
-
