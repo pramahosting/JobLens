@@ -83,7 +83,7 @@
     "xlsx": "^0.18.5",
     "buffer": "^6.0.3",
     "stream-browserify": "^3.0.0",
-    "@esbuild-plugins/node-globals-polyfill": "^0.2.2",
+    "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
     "@esbuild-plugins/node-modules-polyfill": "^0.2.2"
   }
 }
