@@ -1,4 +1,3 @@
-// vite.config.ts
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
@@ -13,24 +12,23 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    mode === 'development' && componentTagger()
+    mode === 'development' &&
+    componentTagger(),
   ].filter(Boolean),
   resolve: {
     alias: {
+      stream: 'stream-browserify',
+      buffer: 'buffer',
       "@": path.resolve(__dirname, "./src"),
-      stream: "stream-browserify",
-      buffer: "buffer"
-    }
+    },
   },
   optimizeDeps: {
     esbuildOptions: {
       define: {
-        global: 'globalThis'
+        global: 'globalThis',
       },
       plugins: [
-        NodeGlobalsPolyfillPlugin({
-          buffer: true
-        }),
+        NodeGlobalsPolyfillPlugin({ buffer: true }),
         NodeModulesPolyfillPlugin()
       ]
     }
