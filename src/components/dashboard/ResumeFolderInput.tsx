@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card, CardContent, CardDescription, CardHeader, CardTitle
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Tabs, TabsContent, TabsList, TabsTrigger
+} from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { FolderOpen, Link2, Users, CheckCircle, Undo2, Download } from 'lucide-react';
+import {
+  FolderOpen, Link2, CheckCircle, Undo2, Download
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import * as XLSX from 'xlsx';
 
@@ -27,7 +33,7 @@ const ResumeFolderInput = () => {
         description: `Found ${files.length} resume files`,
       });
 
-      // Simulate processing and populate results (you should replace with real logic)
+      // Simulate processing and populate results (replace with real logic)
       setTimeout(() => {
         const dummyResults = Array.from({ length: files.length }).map((_, i) => ({
           name: `Candidate ${i + 1}`,
@@ -70,20 +76,6 @@ const ResumeFolderInput = () => {
 
     const fileName = folderPath.split(' ')[0] || 'ResumeResults';
     XLSX.writeFile(wb, `${fileName}_ExtractedResults.xlsx`);
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'qualified': return 'text-green-600 bg-green-50';
-      case 'review': return 'text-yellow-600 bg-yellow-50';
-      default: return 'text-red-600 bg-red-50';
-    }
-  };
-
-  const getScoreColor = (score: number) => {
-    if (score >= 85) return 'text-green-600';
-    if (score >= 70) return 'text-yellow-600';
-    return 'text-red-600';
   };
 
   return (
@@ -178,66 +170,14 @@ const ResumeFolderInput = () => {
         )}
 
         {results.length > 0 && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h4 className="font-semibold text-gray-800">Processing Results</h4>
-              <div className="flex items-center text-sm text-gray-600">
-                <Users className="h-4 w-4 mr-1" />
-                {results.length} candidates
-              </div>
-            </div>
-
-            <div className="space-y-3 max-h-96 overflow-y-auto">
-              {results.map((candidate, index) => (
-                <div key={index} className="border rounded-lg p-4 bg-white">
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <h5 className="font-semibold text-gray-900">{candidate.name}</h5>
-                      <p className="text-sm text-gray-600">{candidate.email}</p>
-                      <p className="text-sm text-gray-600">{candidate.phone}</p>
-                    </div>
-                    <div className="text-right">
-                      <div className={`text-2xl font-bold ${getScoreColor(candidate.atsScore)}`}>
-                        {candidate.atsScore}%
-                      </div>
-                      <div className={`text-xs px-2 py-1 rounded-full ${getStatusColor(candidate.status)}`}>
-                        {candidate.status === 'qualified' ? 'Qualified' : 'Needs Review'}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <p className="font-medium text-green-700 mb-1">Strengths:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {candidate.strengths.map((strength: string, i: number) => (
-                          <span key={i} className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
-                            {strength}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <p className="font-medium text-orange-700 mb-1">Gaps:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {candidate.gaps.map((gap: string, i: number) => (
-                          <span key={i} className="bg-orange-100 text-orange-800 px-2 py-1 rounded text-xs">
-                            {gap}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex justify-end pt-2">
-              <Button onClick={handleDownloadExcel} className="bg-blue-600 text-white hover:bg-blue-700">
-                <Download className="h-4 w-4 mr-2" />
-                Download Excel
-              </Button>
-            </div>
+          <div className="flex justify-end pt-4">
+            <Button
+              onClick={handleDownloadExcel}
+              className="bg-blue-600 text-white hover:bg-blue-700"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Download Excel
+            </Button>
           </div>
         )}
 
@@ -257,3 +197,4 @@ const ResumeFolderInput = () => {
 };
 
 export default ResumeFolderInput;
+
