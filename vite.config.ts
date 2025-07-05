@@ -1,39 +1,30 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react-swc";
-import path from "path";
-import { componentTagger } from "lovable-tagger";
-import { NodeGlobalsPolyfillPlugin } from '@esbuild-plugins/node-globals-polyfill';
-import { NodeModulesPolyfillPlugin } from '@esbuild-plugins/node-modules-polyfill';
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react-swc';
+import path from 'path';
 import dotenv from 'dotenv';
+
 dotenv.config();
 
-export default defineConfig(({ mode }) => ({
+export default defineConfig({
   server: {
-    host: "::",
+    host: '::',
     port: 8080,
   },
-  plugins: [
-    react(),
-    mode === 'development' &&
-    componentTagger(),
-  ].filter(Boolean),
+  plugins: [react()],
   resolve: {
     alias: {
-      stream: 'stream-browserify',
+      '@': path.resolve(__dirname, './src'),
       buffer: 'buffer',
-      "@": path.resolve(__dirname, "./src"),
+      stream: 'stream-browserify',
+      process: 'process/browser',
     },
-    mainFields: ['browser', 'module', 'main'],  // Prioritize browser field
+    mainFields: ['browser', 'module', 'main'],
+  },
+  define: {
+    global: 'globalThis',
+    'process.env': {}, // ensures process.env doesn't crash build
   },
   optimizeDeps: {
-    esbuildOptions: {
-      define: {
-        global: 'globalThis',
-      },
-      plugins: [
-        NodeGlobalsPolyfillPlugin({ buffer: true, process: true }),
-        NodeModulesPolyfillPlugin()
-      ].filter(Boolean)
-    }
-  }
-}));
+    include: ['buffer', 'process', 'stream'],
+  },
+});
