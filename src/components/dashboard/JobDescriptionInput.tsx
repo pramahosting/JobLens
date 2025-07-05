@@ -4,15 +4,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, Upload, Link2, CheckCircle } from 'lucide-react';
+import { FileText, Upload, Link2, CheckCircle, Undo2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 
 import * as pdfjsLib from 'pdfjs-dist';
 import mammoth from 'mammoth';
-
-// ✅ Fix PDF worker for Vite using CDN
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 const JobDescriptionInput = () => {
   const [jobDescription, setJobDescription] = useState('');
@@ -89,15 +86,21 @@ const JobDescriptionInput = () => {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: "openai/gpt-3.5-turbo",
+          model: "mistralai/mistral-7b-instruct",
           messages: [
             {
               role: "system",
-              content: "You are a helpful assistant that extracts structured job information like Job Title, Key Skills, Experience, and Education."
+              content:
+                "You are an expert HR assistant. Extract structured job requirement information from the following job description. Present output in bullet points under the following sections:\n\n" +
+                "- **Job Title**\n" +
+                "- **Key Responsibilities**\n" +
+                "- **Required Skills**\n" +
+                "- **Experience Requirements**\n" +
+                "- **Education Requirements**"
             },
             {
               role: "user",
-              content: `Extract Job Title, Key Skills, Experience, and Education from the following JD:\n\n${jobDescription}`
+              content: jobDescription
             }
           ]
         })
@@ -188,3 +191,4 @@ const JobDescriptionInput = () => {
 };
 
 export default JobDescriptionInput;
+
