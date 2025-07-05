@@ -167,11 +167,11 @@ const JobDescriptionInput = () => {
           </TabsContent>
         </Tabs>
 
-        <div className="flex justify-end">
-          <Button onClick={handleProcessDescription} className="bg-blue-600 text-white hover:bg-blue-700">
-            Process Description
-          </Button>
-        </div>
+        //<div className="flex justify-end">
+          //<Button onClick={handleProcessDescription} className="bg-blue-600 text-white hover:bg-blue-700">
+           // Process Description
+          //</Button>
+        //</div>
 
         {errorMessage && (
           <div className="text-red-600 text-sm">{errorMessage}</div>
