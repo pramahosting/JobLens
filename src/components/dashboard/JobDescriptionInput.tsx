@@ -4,7 +4,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, Upload, Link2, CheckCircle, Undo2 } from 'lucide-react';
+import { FileText, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 
@@ -15,7 +15,6 @@ const JobDescriptionInput = () => {
   const [jobDescription, setJobDescription] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isProcessed, setIsProcessed] = useState(false);
-  const [extractedInfo, setExtractedInfo] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -76,7 +75,6 @@ const JobDescriptionInput = () => {
 
     setErrorMessage(null);
     setIsProcessed(false);
-    setExtractedInfo(null);
 
     try {
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -109,8 +107,8 @@ const JobDescriptionInput = () => {
       const data = await response.json();
 
       if (data.choices && data.choices.length > 0) {
-        setExtractedInfo(data.choices[0].message.content);
         setIsProcessed(true);
+        setJobDescription("Data extracted from JD.");
       } else {
         throw new Error("No response content from model.");
       }
@@ -178,17 +176,9 @@ const JobDescriptionInput = () => {
         {errorMessage && (
           <div className="text-red-600 text-sm">{errorMessage}</div>
         )}
-
-        {extractedInfo && (
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg mt-4">
-            <h4 className="font-semibold text-gray-800 mb-2">Extracted Job Information:</h4>
-            <pre className="whitespace-pre-wrap text-sm text-gray-700">{extractedInfo}</pre>
-          </div>
-        )}
       </CardContent>
     </Card>
   );
 };
 
 export default JobDescriptionInput;
-
